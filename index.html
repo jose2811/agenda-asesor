@@ -1,0 +1,2575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Diaria del Asesor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#F4F5F1; --surface:#FFFFFF; --ink:#1C2B39; --muted:#5B6672; --line:#DADDD6;
+    --p1:#1E5FA8; --p1-soft:#E4EDF7;
+    --p2:#C97A2B; --p2-soft:#FBF0E2;
+    --p3:#1F6F5C; --p3-soft:#E7F1EE;
+    --p4:#B3261E; --p4-soft:#FBEAE9;
+    --p5:#6D4C9F; --p5-soft:#EFEAF7;
+    --danger:#B3261E; --danger-soft:#FBEAE9;
+    --neutral:#6B6F76; --neutral-soft:#EEEEEE;
+    --ok:#2F7A4D; --ok-soft:#E5F2E9;
+    --warn-soft:#FFF6E5;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;}
+  .app{max-width:640px;margin:0 auto;padding:16px 12px 60px;}
+  .brand-bar{background:var(--ink);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:flex;justify-content:center;align-items:center;}
+  .brand-bar img{height:26px;display:block;}
+
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px;}
+  .masthead h1{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:0;}
+  .masthead-date{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:5px 7px;background:#fff;flex-shrink:0;}
+  .sub{font-size:12px;color:var(--muted);margin:2px 0 12px;}
+
+  .config{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;}
+  .cfg-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .cfg-display{display:flex;align-items:center;gap:5px;flex:1;min-width:0;font-size:12.5px;overflow:hidden;}
+  .cfg-display.hidden{display:none;}
+  .cfg-item{color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cfg-item.empty{color:var(--muted);font-weight:500;font-style:italic;}
+  .cfg-dot{color:var(--muted);flex-shrink:0;}
+  .cfg-edit-btn{margin-left:2px;font-size:11px;color:var(--p1);background:none;border:none;cursor:pointer;font-weight:600;font-family:inherit;padding:0;flex-shrink:0;}
+  .cfg-edit-row{display:flex;gap:6px;flex:1;min-width:180px;}
+  .cfg-edit-row.hidden{display:none;}
+  .cfg-edit-row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+  .cfg-edit-row input:focus{outline:2px solid var(--ink);outline-offset:1px;}
+
+  .overall{background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
+  .hero-donut-row{display:flex;align-items:center;gap:14px;}
+  .hero-donut-wrap{flex:0 0 34%;display:flex;justify-content:center;}
+  .ficha-donut-lg{width:100%;max-width:104px;height:auto;}
+  .hero-donut-info{flex:1;min-width:0;}
+  .hero-donut-title{color:#fff;font-size:20px;font-weight:700;letter-spacing:-0.01em;line-height:1.15;margin-bottom:5px;}
+  .hero-donut-sub{font-size:12px;color:rgba(255,255,255,.72);line-height:1.4;}
+
+  .weekly{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;margin-bottom:14px;}
+  .weekly-head{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:0;cursor:pointer;user-select:none;}
+  #weeklyBody{margin-top:10px;}
+  #weeklyBody.hidden{display:none;}
+  #weeklyChev{font-size:11px;color:var(--muted);transition:transform .2s ease;}
+  #weeklyChev.collapsed{transform:rotate(-90deg);}
+  .weekly-head h3{margin:0;font-size:13px;font-weight:700;}
+  .weekly-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;}
+  .wb-locked{background:var(--neutral-soft);color:var(--neutral);}
+  .wb-open{background:var(--ok-soft);color:var(--ok);}
+  .combo{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:12.5px;}
+  .combo:last-child{border-bottom:none;}
+  .combo .mark{width:16px;text-align:center;font-weight:700;}
+  .combo.met .mark{color:var(--ok);}
+  .combo:not(.met) .mark{color:var(--line);}
+  .combo .txt{flex:1;color:var(--ink);}
+  .combo.locked{opacity:.45;}
+  .weekly-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+
+  .section{margin-bottom:14px;}
+  .tab{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px 10px 0 0;cursor:pointer;user-select:none;}
+  .tab .idx{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:13px;background:rgba(255,255,255,.35);border-radius:5px;padding:1px 6px;}
+  .tab .title{font-weight:600;font-size:14px;flex:1;}
+  .tab .count{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;background:rgba(255,255,255,.55);padding:2px 8px;border-radius:99px;}
+  .tab .chev{font-size:11px;transition:transform .2s ease;opacity:.8;}
+  .tab.collapsed .chev{transform:rotate(-90deg);}
+  .s1 .tab{background:var(--p1);color:#fff;} .s2 .tab{background:var(--p2);color:#fff;}
+  .s3 .tab{background:var(--p3);color:#fff;} .s4 .tab{background:var(--p5);color:#fff;}
+  .s5 .tab{background:var(--p4);color:#fff;}
+
+  .panel{background:var(--surface);border:1px solid var(--line);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:12px 12px 14px;}
+  .panel.hidden{display:none;}
+  .hint{font-size:11.5px;color:var(--muted);margin:0 0 10px;}
+
+  .add-row-wrap{border-radius:10px;padding:10px 10px 4px;margin-bottom:10px;border:1.5px solid var(--line);}
+  .add-row-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:0 0 8px;display:block;}
+  .s1 .add-row-wrap{background:var(--p1-soft);border-color:var(--p1);}
+  .s1 .add-row-label{color:var(--p1);}
+  .s2 .add-row-wrap{background:var(--p2-soft);border-color:var(--p2);}
+  .s2 .add-row-label{color:var(--p2);}
+  .s3 .add-row-wrap{background:var(--p3-soft);border-color:var(--p3);}
+  .s3 .add-row-label{color:var(--p3);}
+  .s4 .add-row-wrap{background:var(--p5-soft);border-color:var(--p5);}
+  .s4 .add-row-label{color:var(--p5);}
+  .s5 .add-row-wrap{background:var(--p4-soft);border-color:var(--p4);}
+  .s5 .add-row-label{color:var(--p4);}
+  .add-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .add-row input,.add-row select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;font-size:13.5px;font-family:inherit;flex:1 1 110px;min-width:0;}
+  .add-row .btn-add{flex:1 1 100%;}
+  .btn{border:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn-add{background:var(--ink);color:#fff;white-space:nowrap;}
+
+  .entries{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+  .ficha{border:1px solid var(--line);border-left-width:4px;border-radius:8px;padding:6px 8px;background:#fdfdfc;}
+  .ficha.trasladado{opacity:.5;}
+  .s1 .ficha{border-left-color:var(--p1);} .s2 .ficha{border-left-color:var(--p2);}
+  .s3 .ficha{border-left-color:var(--p3);} .s4 .ficha{border-left-color:var(--p5);}
+  .s5 .ficha{border-left-color:var(--p4);}
+  .ficha-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .ficha-name{font-weight:600;font-size:12.5px;flex:1 1 100px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ficha-tag-sm{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);flex:0 0 auto;white-space:nowrap;}
+  .ficha-tag-sm.cross-ref{font-style:italic;opacity:.75;}
+  .ficha-tag-sm.tag-warn{color:var(--p2);font-weight:700;}
+  .ficha-tag-sm.tag-danger{color:var(--danger);font-weight:700;}
+  .ficha-del{border:none;background:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;line-height:1;flex:0 0 auto;}
+  .ficha-del:hover{color:var(--p1);}
+  .locked-tag{font-size:12px;opacity:.55;cursor:default;flex:0 0 auto;}
+  .status-select{font-family:inherit;font-size:10.5px;font-weight:700;border-radius:99px;border:1.5px solid currentColor;padding:2px 8px;cursor:pointer;flex:0 0 auto;max-width:112px;}
+  .st-pendiente,.st-p-pendiente{background:#fff;color:var(--muted);}
+  .st-contactado,.st-p-contactado{background:#E4ECF5;color:#2C4A72;}
+  .st-compromiso{background:var(--warn-soft);color:#8A5A00;}
+  .st-parcial{background:#E4EDF7;color:#1E5FA8;}
+  .st-pagado{background:var(--ok-soft);color:var(--ok);}
+  .st-nolocalizado{background:var(--danger-soft);color:var(--danger);}
+  .st-p-analisis{background:var(--warn-soft);color:#8A5A00;}
+  .st-p-desembolsado{background:var(--ok-soft);color:var(--ok);}
+  .st-p-rechazado{background:var(--danger-soft);color:var(--danger);}
+  .time-tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);flex:0 0 auto;}
+  .traslado-tag{font-size:10.5px;font-weight:600;color:var(--p4);}
+  .ficha-comment{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 6px;margin-top:4px;font-size:11px;font-family:inherit;color:var(--ink);}
+  .ficha-cuota-row{display:flex;align-items:center;gap:6px;margin-top:4px;}
+  .cuota-label{font-size:10.5px;color:var(--muted);}
+  .ficha-cuota{width:90px;border:1px solid var(--line);border-radius:6px;padding:3px 6px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--ink);}
+  .ficha-warn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+  .empty{font-size:12.5px;color:var(--muted);font-style:italic;padding:6px 2px;}
+
+  .ficha-stats-line{font-size:12.5px;color:var(--muted);background:var(--p1-soft);border:1px solid var(--p1);border-radius:8px;padding:8px 10px;margin-bottom:10px;}
+  .incentivo-box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .incentivo-title{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+  .incentivo-tiers{display:flex;gap:6px;}
+  .incentivo-tier{flex:1;text-align:center;border:1px solid var(--line);border-radius:8px;padding:8px 4px;background:var(--bg);}
+  .incentivo-tier.active{border-color:var(--ok);background:var(--ok-soft);}
+  .it-pct{font-size:10px;color:var(--muted);font-weight:600;}
+  .it-rate{font-size:9.5px;color:var(--muted);margin-top:1px;}
+  .it-monto{font-size:14px;font-weight:700;color:var(--ink);margin-top:3px;font-family:'IBM Plex Mono',monospace;}
+  .incentivo-tier.active .it-monto{color:var(--ok);}
+  .incentivo-note{font-size:10px;color:var(--muted);margin-top:8px;font-style:italic;}
+  .mora17-stats-banner{display:flex;align-items:center;gap:12px;background:var(--p2-soft);border:1px solid var(--p2);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+  .mora17-stats-banner .ficha-donut{width:60px;height:60px;}
+  .mora17-stats-info{flex:1;min-width:0;font-size:12.5px;color:var(--ink);}
+  .ficha-donut{width:76px;height:76px;flex:0 0 auto;transform:rotate(-90deg);}
+  .donut-bg{fill:none;stroke:var(--line);stroke-width:11;}
+  .donut-fg{fill:none;stroke-width:11;stroke-linecap:round;transition:stroke-dashoffset .4s ease;}
+  .donut-text{font-family:'IBM Plex Sans',sans-serif;font-size:22px;font-weight:700;transform:rotate(90deg);transform-origin:50px 50px;}
+  .ficha.ficha-pagada .ficha-name{text-decoration:line-through;color:var(--muted);}
+  .ficha.ficha-pagada{opacity:.6;}
+  .ficha.ficha-nopagada{border-left-color:var(--danger)!important;background:var(--danger-soft);}
+  .ficha.ficha-parcial{border-left-color:#1E5FA8!important;background:#E4EDF7;}
+  .parcial-tag{font-size:10.5px;font-weight:600;color:#1E5FA8;}
+  .fichas-pagadas-block{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);}
+  .fichas-pagadas-label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:6px;}
+  .capture-collapsible .add-row-label{cursor:pointer;}
+  .capture-collapsible.collapsed{padding-bottom:10px;}
+  .capture-collapsible .add-row.hidden{display:none;}
+
+  .evidence-row{margin-top:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .btn-evidence{background:#fff;border:1px dashed var(--muted);color:var(--ink);font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:7px;cursor:pointer;font-family:inherit;}
+  .evidence-ok{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ok);font-weight:600;}
+  .evidence-ok img{width:30px;height:30px;object-fit:cover;border-radius:5px;border:1px solid var(--line);flex-shrink:0;}
+  .evidence-warn{font-size:11px;color:var(--danger);font-weight:600;}
+  .visit-count{font-size:10.5px;color:var(--muted);font-style:italic;}
+  .maplink{font-size:11px;color:#2C4A72;text-decoration:underline;}
+  .maplink-off{font-size:11px;color:var(--muted);font-style:italic;}
+  .maps-hint{font-size:10.5px;color:var(--muted);margin:4px 0 4px;line-height:1.4;}
+  .zona-validation{font-size:11px;font-weight:600;margin:4px 0 2px;line-height:1.4;}
+  .coords-input{width:100%;border:1px solid var(--muted);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:var(--ink);}
+
+  .actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+  .actions .btn{flex:1;min-width:130px;padding:10px;font-size:12.5px;}
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-secondary{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+  .btn-danger{background:var(--surface);color:var(--danger);border:1px solid var(--danger-soft);}
+
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:99px;font-size:12.5px;opacity:0;pointer-events:none;transition:opacity .25s ease;box-shadow:0 6px 18px rgba(0,0,0,.2);max-width:90%;text-align:center;z-index:50;}
+  .toast.show{opacity:1;}
+
+  .report{display:none;} .report.active{display:block;}
+  .app.report-mode .editor{display:none;}
+  .report-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 14px;}
+  .report-head{border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:12px;}
+  .report-head h2{margin:0 0 2px;font-size:16px;}
+  .report-head .meta{font-size:11.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+  .load-box{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:14px;font-size:11.5px;color:var(--ink);}
+  .load-box.load-light{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);}
+  .report-sec{margin-bottom:14px;}
+  .report-sec-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 8px;border-radius:5px;display:inline-block;margin-bottom:6px;}
+  .hist-note{font-size:10.5px;color:var(--muted);font-style:italic;margin:0 0 6px;}
+  .r1{background:var(--p1-soft);color:var(--p1);} .r2{background:var(--p2-soft);color:var(--p2);}
+  .r3{background:var(--p3-soft);color:var(--p3);} .r4{background:var(--p5-soft);color:var(--p5);}
+  .r5{background:var(--p4-soft);color:var(--p4);}
+  .report-line{display:flex;gap:6px;font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--line);align-items:baseline;flex-wrap:wrap;}
+  .report-line:last-child{border-bottom:none;}
+  .report-line .rn{font-weight:600;flex:1;min-width:90px;}
+  .report-line .rd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);}
+  .report-line .rs{font-size:10.5px;font-weight:700;}
+  .report-line .rc{width:100%;font-size:11.5px;color:var(--muted);font-style:italic;}
+  .ev-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;}
+  .report-thumb{width:22px;height:22px;object-fit:cover;border-radius:4px;border:1px solid var(--line);flex-shrink:0;}
+  .report-empty{font-size:11.5px;color:var(--muted);font-style:italic;}
+  .report-summary{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:2px solid var(--ink);}
+  .report-summary .box{flex:1;text-align:center;}
+  .report-summary .box .n{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:17px;}
+  .report-summary .box .l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .back-edit{margin-top:12px;width:100%;}
+  .footer{text-align:center;margin-top:26px;font-size:11px;color:var(--muted);letter-spacing:.02em;}
+  .footer b{color:var(--ink);}
+
+  .help-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+  .help-toggle{padding:11px 14px;font-weight:600;font-size:13.5px;cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px;color:var(--ink);}
+  .help-toggle .chev{margin-left:auto;font-size:11px;color:var(--muted);transition:transform .2s ease;}
+  .help-toggle .chev.collapsed{transform:rotate(-90deg);}
+  .help-body{padding:0 14px 14px;font-size:12.5px;line-height:1.55;color:var(--ink);}
+  .help-body.hidden{display:none;}
+  .help-body h4{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 4px;}
+  .help-body h4:first-child{margin-top:0;}
+  .help-body p{margin:0;}
+  .help-body b{color:var(--ink);}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(28,43,57,.55);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
+  .modal-overlay.hidden{display:none;}
+  .modal-box{background:var(--surface);border-radius:var(--radius);padding:20px 18px;max-width:380px;width:100%;}
+  .modal-box h3{margin:0 0 8px;font-size:15px;}
+  .modal-box p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.5;}
+  .modal-actions{display:flex;gap:8px;}
+  .modal-actions .btn{flex:1;padding:10px;}
+
+  .banner{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;display:flex;align-items:flex-start;gap:8px;}
+  .banner-cross{background:var(--danger-soft);color:var(--danger);}
+  .banner-warning6{background:var(--p2-soft);color:var(--p2);}
+  .banner-forecast{background:var(--warn-soft);color:#8A5A00;}
+  .banner b{display:block;margin-bottom:2px;}
+  .banner-close{margin-left:auto;background:none;border:none;cursor:pointer;color:inherit;opacity:.6;font-size:14px;line-height:1;}
+
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  .lightbox.hidden{display:none;}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:8px;}
+  .lightbox #lightboxClose{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:16px;cursor:pointer;}
+  .evidence-ok img, .report-thumb{cursor:pointer;}
+
+  @media (max-width:380px){}
+
+  @media print{
+    body{background:#fff;}
+    .editor, .back-edit, .toast, .modal-overlay, .lightbox{display:none !important;}
+    .app{max-width:100%;padding:0;}
+    .report{display:block !important;}
+    .report-card{border:none;padding:0;}
+    .report-sec{break-inside:avoid;page-break-inside:avoid;}
+    .report-line{break-inside:avoid;page-break-inside:avoid;}
+    .report-summary{break-inside:avoid;page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <div class="brand-bar"><img src="data:image/png;base64,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" alt="Crediclub"></div>
+
+  <div class="masthead"><h1>Agenda Diaria del Asesor</h1><input type="date" id="fecha" class="masthead-date"></div>
+  <p class="sub">Gestión a distancia — orden de prioridad acordado con gerencia</p>
+
+  <div class="help-wrap editor">
+    <div class="help-toggle" id="helpToggle">❓ Cómo usar esta agenda <span class="chev collapsed" id="helpChev">▾</span></div>
+    <div class="help-body hidden" id="helpBody">
+      <h4>Orden de prioridad (no se salta)</h4>
+      <p>Los 5 bloques van en este orden a propósito: primero prevenir viendo toda la <b>semana</b> completa (01), luego contener lo que ya se atrasó poco (02), después los clientes que generan ingreso (03), luego el cambaceo que alimenta al 03 (04), y solo si sobra tiempo, seguimiento a mora más vieja (05).</p>
+
+      <h4>El lunes se captura completo</h4>
+      <p>Lunes: anota tus compromisos 8-60 tal como los tengas en ese momento — ese bloque sigue avanzando solo día a día. Fichas de la semana y Mora de la semana pasada, en cambio, las puedes llenar completas desde el sábado o el lunes — no dependen del día que sea, ni se reinician entre semana.</p>
+
+      <h4>Fichas de la semana (01)</h4>
+      <p>Aquí anotas <b>todas</b> las fichas que vencen esta semana, de una sola vez — no hace falta esperar a que llegue el día. Por cada una: nombre, <b>fecha de pago</b> y un estatus obligatorio: <b>Pagada</b>, <b>En tiempo</b>, <b>Pago parcial</b> o <b>Complicada</b>.<br>
+      <b>Pago parcial y Complicada piden evidencia</b> (foto + coordenadas) — un pago parcial no cuenta como cerrada para el porcentaje, pero tampoco se ve tan alarmante como "no pagada", porque sí hubo avance. Anota en el comentario cuánto recibió y cuándo cae el resto.<br>
+      <b>Nunca cambia de bloque.</b> Se queda aquí toda la semana — no se traslada a Mora ni a ningún otro lado.<br>
+      <b>Si la fecha de pago ya pasó y sigue sin estar "Pagada"</b>, se marca sola como <b>no pagada</b> (en rojo) — nadie tiene que marcarlo a mano, es automático con solo comparar la fecha contra hoy. <b>Si seguía en "En tiempo", también sube sola a "Complicada"</b> — así exige foto + coordenadas igual que cualquier Complicada, con una nota automática en el comentario para que quede claro que no fue el asesor quien la cambió. Una vez vencida, "En tiempo" deja de estar disponible como opción — solo Pagada o Complicada tienen sentido a esas alturas.<br>
+      <b>Las pagadas se tachan</b> y se agrupan aparte, abajo, para que no hagan bulto — pero siguen contando para el porcentaje.<br>
+      Arriba del bloque hay un contador: <b>X acumuladas · X cerradas · X%</b> — el porcentaje es pagadas entre (pagadas + no pagadas); las que aún no llega su fecha no cuentan para ese número.<br>
+      El cuadro de captura está colapsado por default (toca "+ Agregar ficha de la semana" para abrirlo) — así no estorba mientras solo estás dando seguimiento.<br>
+      <b>Si la marcas "Complicada"</b>, se habilita registrar visita presencial (foto + ubicación) — es probable que no cierre, así que toca ir a buscarla.</p>
+
+      <h4>Mora de la semana pasada (02)</h4>
+      <p>Aquí van las cuentas de 1-7 días que <b>no se cerraron la semana pasada</b> — captúralas el sábado o el lunes, con nombre y los días de atraso que traigan en ese momento. Los días avanzan solos por dentro (sin que tengas que tocar nada), comparando cuándo la capturaste contra hoy.<br>
+      <b>Si llega a 8 días, no desaparece de aquí</b> — se sigue mostrando en esta cintilla, marcada "también en 8-60", Y ADEMÁS aparece en Seguimiento 8-60. Es la misma cuenta real en los dos lugares: si la actualizas desde cualquiera de los dos, se refleja en ambos. Así nadie deja de darle seguimiento solo porque ya cumplió una semana de atraso.<br>
+      <b>Requiere evidencia</b> (foto + coordenadas) mientras no esté pagada — igual que siempre, sin importar si ya cruzó los 8 días. Seguimiento 8-60 nunca pide evidencia, así que esta sigue siendo la única cintilla donde de verdad se exige. <b>Puedes registrar una visita nueva cada día</b> — el botón nunca desaparece, así que si la visitas varios días seguidos hasta que cierre, quedan todas guardadas, no solo la primera.<br>
+      <b>Aviso reforzado:</b> el número de días se pinta ámbar al llegar a 6, y rojo al llegar a 7 — con un banner de alerta un día antes del salto, además del banner del mismo día.<br>
+      Arriba tienes tu propio anillo de cumplimiento, igual que en Fichas de la semana — % de cuentas ya cerradas contra el total que capturaste.</p>
+
+      <h4>Seguimiento y compromisos 8-60 (05)</h4>
+      <p>Mezcla dos cosas: lo que captures aquí directo (mora vieja de verdad, o compromisos que ya traías) — eso sí avanza de días automático, día a día — y las cuentas de "Mora de la semana pasada" que ya cruzaron los 8 días, mostradas tal cual, sin copiarlas. Desde aquí no se pide evidencia ni se puede borrar una cuenta prestada de la otra cintilla — eso se hace desde su casa, en el bloque 02.</p>
+
+      <h4>Clientes a desembolsar (03)</h4>
+      <p>Aquí van los prospectos reales que sí pueden generar un desembolso: <b>Nuevo</b>, <b>Renovación</b>, <b>LNR</b> (Liquidado No Renovado — clientes que ya terminaron su crédito y no renovaron, se les vuelve a buscar) y <b>Lead Digital</b>. Viven en una sola lista que dura toda la semana (no se pierden aunque cambies de día), hasta que uses "Borrar días anteriores".<br>
+      Su estatus: Pendiente → Enviado a análisis → Desembolsado / Rechazado.<br>
+      <b>Ojo con Lead Digital:</b> si lo dejas en "Pendiente", solo cuenta para tu meta si le escribes un comentario (prueba de que sí le diste seguimiento).<br>
+      <b>Si un cliente lleva 2 días o más sin que nadie le cambie el estatus</b>, aparece "⚠ X días sin actualizar" — tanto en su tarjeta como en el reporte, para detectar seguimientos abandonados sin tener que revisar cuenta por cuenta.<br>
+      <b>Solo se puede borrar el mismo día que lo capturas</b> — al día siguiente ya queda fijo (🔒) y solo se resuelve cambiando su estatus, para que ningún compromiso se "desaparezca" a mitad de semana.</p>
+
+      <h4>Prospección y cambaceo (04)</h4>
+      <p>Solo <b>Zona</b>: nombre de la zona + hora. <b>Ahora vive toda la semana</b>, igual que Fichas/Mora17/Desembolsos — no se borra al cambiar de día, solo con "Borrar días anteriores" al iniciar la siguiente semana.<br>
+      <b>Evidencia en dos pasos:</b> mientras no la marques "Realizado", el botón pide primero <b>🚶 Iniciar promoción</b> (foto + coordenadas + hora) y, al terminar el recorrido, <b>🏁 Finalizar promoción</b> (otra foto + coordenadas + hora). Con los dos puntos, la agenda calcula cuánto tiempo real estuviste en promoción y qué tan lejos te moviste entre el inicio y el fin.<br>
+      <b>Es un sistema de confianza</b> (se puede engañar si alguien quiere) — la agenda no redacta un veredicto, solo resalta minutos y metros entre inicio y fin, con un color según qué tan poco se movió: <b>🟢 500m o más</b>, <b>🟠 entre 300 y 500m</b> (revisar con contexto — puede ser una zona compacta), <b>🔴 menos de 300m</b>, o si el cierre llega en menos de 3 minutos después del inicio. La distancia es en línea recta (no la ruta real caminada, así que puede no reflejar bien zonas con calles muy curveadas), y cada registro trae un enlace <b>🗺️ Ver ruta en el mapa</b> para verlo con tus propios ojos antes de decidir. El criterio final siempre es tuyo o del gerente.<br>
+      También hay un <b>Resumen de cambaceo de la semana</b> (en pantalla, PDF y WhatsApp) con todas las promociones completas juntas, para revisar de un vistazo sin abrir cuenta por cuenta.<br>
+      Aquí es donde se originan los prospectos que después capturas con nombre en el bloque 03.</p>
+
+      <h4>Evidencia — nomenclatura en los reportes</h4>
+      <p>Vas a ver una etiqueta como <b>CF·CC</b> (con foto, con coordenadas) o <b>SF·SC</b> (sin foto, sin coordenadas) junto a cualquier cuenta que necesite evidencia — en rojo si falta algo, en verde si ya está completa.</p>
+
+      <h4>Carga del día</h4>
+      <p>Arriba del resumen (pantalla, PDF y WhatsApp) aparece cuántas cuentas traes en gestión (fichas + mora + seguimiento) y cuántas <b>zonas de cambaceo</b> tienes hoy. Si son menos de 2 zonas, sale en rojo <b>"Agenda ligera en prospección"</b> — es la señal para meterle más horas de promoción ese día. También avisa si traes clientes a desembolsar sin actualizar hace 2+ días.</p>
+
+      <h4>Metas de la semana</h4>
+      <p>10 prospectos enviados a análisis (Nuevo + LNR + Lead Digital) y 2 desembolsos nuevos — panel colapsable al fondo. Las renovaciones se trabajan aparte, sin número fijo.</p>
+
+      <h4>Enviar tu avance al gerente</h4>
+      <p>Si es poco, manda una <b>captura de pantalla</b> del resumen ("Ver resumen para enviar"). Si es mucho y no cabe en una imagen, usa <b>"Descargar PDF"</b> y manda el archivo. También existe <b>"Copiar como texto"</b>, por si prefieres pegarlo directo en el chat sin imagen ni archivo.</p>
+
+      <h4>Guarda el archivo una sola vez</h4>
+      <p>La primera vez que recibas este archivo por WhatsApp, guárdalo en tu celular (Descargas, o Archivos en iPhone) y ábrelo siempre desde ahí. Si lo vuelves a tocar directo desde WhatsApp, tu información guardada puede no aparecer.</p>
+    </div>
+  </div>
+
+  <div class="config editor">
+    <div class="cfg-line">
+      <div class="cfg-display" id="cfgDisplay">
+        <span class="cfg-item" id="cfgSucursalTxt">Sin sucursal</span>
+        <span class="cfg-dot">·</span>
+        <span class="cfg-item" id="cfgAsesorTxt">Sin asesor</span>
+        <button class="cfg-edit-btn" id="cfgEditBtn">editar</button>
+      </div>
+      <div class="cfg-edit-row" id="cfgEditRow">
+        <input type="text" id="sucursal" placeholder="Sucursal">
+        <input type="text" id="asesor" placeholder="Nombre del asesor">
+      </div>
+    </div>
+  </div>
+
+  <div class="overall editor" id="overallWrap"></div>
+
+  <div id="bannersWrap" class="editor"></div>
+
+  <div class="editor" id="sectionsWrap"></div>
+
+  <div class="actions editor">
+    <button class="btn btn-secondary" id="btnCarry">Trasladar pendientes ahora</button>
+    <button class="btn btn-primary" id="btnReport">Ver resumen para enviar</button>
+    <button class="btn btn-secondary" id="btnCopy">Copiar como texto</button>
+    <button class="btn btn-danger" id="btnResetWeek">Borrar días anteriores</button>
+  </div>
+
+  <div class="weekly editor" id="weeklyPanel">
+    <div class="weekly-head" id="weeklyToggle">
+      <h3>Meta de prospección · semana</h3>
+      <span class="weekly-badge" id="weeklyBadge">--</span>
+      <span class="chev collapsed" id="weeklyChev">▾</span>
+    </div>
+    <div id="weeklyBody" class="hidden">
+      <div id="comboList"></div>
+      <p class="weekly-hint" id="weeklyHint"></p>
+    </div>
+  </div>
+
+  <div class="report" id="reportView">
+    <div class="report-card" id="reportCard"></div>
+    <button class="btn btn-primary back-edit" id="btnPrint">📄 Descargar PDF</button>
+    <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
+  </div>
+
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.8.0 —</div>
+
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" accept="image/*" capture="user" id="cameraInput" style="display:none">
+
+<div class="modal-overlay hidden" id="carryModal">
+  <div class="modal-box">
+    <h3 id="carryModalTitle">Pendientes por trasladar</h3>
+    <p id="carryModalText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="carryDecline">Ahora no</button>
+      <button class="btn btn-primary" id="carryAccept">Sí, trasladar</button>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox hidden" id="photoLightbox">
+  <img id="lightboxImg" src="" alt="Evidencia ampliada">
+  <button id="lightboxClose" title="Cerrar">✕</button>
+</div>
+
+<script>
+(function(){
+  const SECTIONS = [
+    {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
+    {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
+    {id:'s3', idx:'03', key:'desembolso', type:'prospeccion', title:'Clientes a desembolsar', hint:'Nuevo, Renovación, LNR (Liquidado No Renovado) o Lead Digital. Vive toda la semana, hasta "Borrar días anteriores".', namePh:'Nombre del cliente', detailPh:'Monto o referencia (opcional)', detailType:'text', extraField:'tipoDesembolso'},
+    {id:'s4', idx:'04', key:'prospeccion', type:'prospeccion', title:'Prospección y cambaceo', hint:'Zona de cambaceo — vive toda la semana, hasta "Borrar días anteriores". Registra inicio y fin de cada promoción con foto y coordenadas.', namePh:'Zona', detailPh:'Hora estimada', detailType:'time'},
+    {id:'s5', idx:'05', key:'mora860', type:'mora', title:'Seguimiento y compromisos 8–60', hint:'Lunes: captura las cuentas con compromiso que traigas en este rango. Estas avanzan solas día a día. También aparecen aquí, sin copiarlas, las cuentas de "Mora de la semana pasada" que ya cruzaron 8 días. No es toda la cartera.', namePh:'Nombre del cliente', detailPh:'Días de atraso', detailType:'number'},
+  ];
+  const STATUS_MORA = [
+    {v:'pendiente', l:'Pendiente', cls:'st-pendiente'},
+    {v:'contactado', l:'Contactado', cls:'st-contactado'},
+    {v:'compromiso', l:'Compromiso', cls:'st-compromiso'},
+    {v:'parcial', l:'Pago parcial', cls:'st-parcial'},
+    {v:'pagado', l:'Pagado', cls:'st-pagado'},
+    {v:'nolocalizado', l:'No localizado', cls:'st-nolocalizado'},
+  ];
+  const STATUS_PROSPECCION = [
+    {v:'pendiente', l:'Pendiente', cls:'st-p-pendiente'},
+    {v:'analisis', l:'Enviado a análisis', cls:'st-p-analisis'},
+    {v:'desembolsado', l:'Desembolsado', cls:'st-p-desembolsado'},
+    {v:'rechazado', l:'Rechazado', cls:'st-p-rechazado'},
+  ];
+  const STATUS_FICHAS = [
+    {v:'pagada', l:'Pagada', cls:'st-pagado'},
+    {v:'entiempo', l:'En tiempo', cls:'st-compromiso'},
+    {v:'parcial', l:'Pago parcial', cls:'st-parcial'},
+    {v:'complicada', l:'Complicada', cls:'st-nolocalizado'},
+  ];
+  const STATUS_ZONA = [
+    {v:'pendiente', l:'Pendiente', cls:'st-p-pendiente'},
+    {v:'realizado', l:'Realizado', cls:'st-p-desembolsado'},
+  ];
+  const moraMap = Object.fromEntries(STATUS_MORA.map(s=>[s.v,s]));
+  const prospMap = Object.fromEntries(STATUS_PROSPECCION.map(s=>[s.v,s]));
+  const fichasMap = Object.fromEntries(STATUS_FICHAS.map(s=>[s.v,s]));
+  const zonaMap = Object.fromEntries(STATUS_ZONA.map(s=>[s.v,s]));
+  const SECTION_BY_KEY = Object.fromEntries(SECTIONS.map(s=>[s.key,s]));
+  // Para Prospección, "Zona (cambaceo)" usa un estatus simple (Pendiente/Realizado);
+  // "Nuevo"/"Renovación" son prospectos reales y usan el embudo completo.
+  function statusList(sec, entry){
+    if(sec.type==='prospeccion') return (entry && entry.tipo==='Zona') ? STATUS_ZONA : STATUS_PROSPECCION;
+    if(sec.type==='fichas'){
+      // Ya vencida sin pagar: "En tiempo" ya no tiene sentido — solo Pagada o Complicada.
+      if(entry && entry.fechaPago && entry.fechaPago < fechaInput.value){
+        return STATUS_FICHAS.filter(s => s.v !== 'entiempo');
+      }
+      return STATUS_FICHAS;
+    }
+    return STATUS_MORA;
+  }
+  function statusInfo(sec, entry){
+    if(sec.type==='prospeccion'){
+      if(entry.tipo==='Zona') return zonaMap[entry.status]||STATUS_ZONA[0];
+      return prospMap[entry.status]||STATUS_PROSPECCION[0];
+    }
+    if(sec.type==='fichas') return fichasMap[entry.status]||STATUS_FICHAS[1];
+    return moraMap[entry.status]||STATUS_MORA[0];
+  }
+  function isDone(sec, entry){
+    if(sec.type==='prospeccion'){
+      if(entry.tipo==='Zona') return entry.status==='realizado';
+      return entry.status==='desembolsado' || entry.status==='rechazado';
+    }
+    if(sec.type==='fichas') return entry.status==='pagada';
+    return entry.status==='pagado';
+  }
+  // Muestra solo la hora si la última gestión fue hoy; si fue en un día anterior
+  // (la cuenta lleva tiempo sin tocarse), muestra fecha + hora como señal de alerta.
+  function formatStatusStamp(e){
+    if(!e.statusTime) return '';
+    if(e.statusDate && e.statusDate !== fechaInput.value) return fmtDate(e.statusDate)+' · '+e.statusTime;
+    return e.statusTime;
+  }
+  const STALE_THRESHOLD_DAYS = 2; // prospectos sin tocar por esto o más días se marcan como estancados
+  function staleDays(e){
+    const lastTouch = e.statusDate || e.originDate;
+    if(!lastTouch) return 0;
+    return dayGap(lastTouch, fechaInput.value);
+  }
+  // Solo aplica a clientes a desembolsar (no Zona) que aún no se resolvieron.
+  function isStale(sec, e){
+    if(sec.key!=='desembolso') return false;
+    if(isDone(sec, e)) return false;
+    return staleDays(e) >= STALE_THRESHOLD_DAYS;
+  }
+  // Fichas de la semana: el "bucket" no se guarda, se calcula solo comparando la
+  // fecha de pago contra hoy — así nadie tiene que marcar manualmente "no quedó".
+  // pendiente: la fecha de pago es hoy o todavía no llega (no cuenta para el % de
+  // cierre) — a las de hoy se les da el día completo antes de marcarlas.
+  // pagada: estatus Pagada, sin importar la fecha.
+  // parcial: Pago parcial — no cuenta como cerrada para el %, pero no se ve tan
+  // alarmante como "no pagada", porque sí hubo avance real.
+  // nopagada: la fecha ya pasó (antes de hoy) y sigue sin estar Pagada ni Parcial.
+  function fichaBucket(e){
+    if(e.status==='pagada') return 'pagada';
+    if(e.status==='parcial') return 'parcial';
+    if(e.fechaPago && e.fechaPago >= fechaInput.value) return 'pendiente';
+    return 'nopagada';
+  }
+  // Si una ficha sigue "En tiempo" pero su fecha de pago ya pasó sin marcarla Pagada,
+  // se sube sola a "Complicada" — así exige foto + coordenadas igual que cualquier
+  // Complicada, en vez de quedarse en rojo sin pedir evidencia. Se avisa en el propio
+  // comentario que fue un cambio automático, no algo que el asesor escribió.
+  const FICHA_AUTO_NOTE = '[Auto: pasó a Complicada por no pagarse a tiempo]';
+  function reconcileFichaStatuses(){
+    let changed = false;
+    weekFichas.forEach(e=>{
+      if(e.status==='entiempo' && e.fechaPago && e.fechaPago < fechaInput.value){
+        e.status = 'complicada';
+        if(!e.comment || !e.comment.includes('Auto: pasó a Complicada')){
+          e.comment = e.comment ? `${e.comment} ${FICHA_AUTO_NOTE}` : FICHA_AUTO_NOTE;
+        }
+        changed = true;
+      }
+    });
+    if(changed) saveWeekFichas();
+  }
+  function computeFichaSemanaStats(){
+    let pagadas=0, nopagadas=0, pendientes=0, parciales=0;
+    weekFichas.forEach(e=>{
+      const b = fichaBucket(e);
+      if(b==='pagada') pagadas++;
+      else if(b==='parcial'){ parciales++; nopagadas++; }
+      else if(b==='nopagada') nopagadas++;
+      else pendientes++;
+    });
+    const acumuladas = pagadas + nopagadas;
+    const pct = acumuladas ? Math.round(pagadas/acumuladas*100) : 0;
+    return { pagadas, nopagadas, pendientes, parciales, acumuladas, total: weekFichas.length, pct };
+  }
+  // Incentivo semanal: usa el mismo % de cierre que ya alimenta el donut — no se
+  // vuelve a calcular nada nuevo, solo se le agrega el monto de cuota por ficha.
+  // La cuota es opcional; si nadie la captura, este cálculo simplemente no aparece.
+  const INCENTIVO_TIERS = [
+    { label: '100%', rate: 0.008, min: 100 },
+    { label: '95% – 99.9%', rate: 0.006, min: 95 },
+    { label: '90% – 94.9%', rate: 0.004, min: 90 },
+  ];
+  function computeIncentivoStats(){
+    // Se suma TODO lo capturado esta semana (incluidas las que aún no vencen) — el
+    // mensaje es "si cierras el 100/95/90% de todo lo que traes, esto te ganas",
+    // no solo lo que ya venció. Así el premio completo se ve desde el lunes.
+    const totalCuotas = weekFichas
+      .reduce((sum, e) => sum + (e.cuota!=null && !isNaN(e.cuota) ? Number(e.cuota) : 0), 0);
+    const stats = computeFichaSemanaStats();
+    let currentTierIdx = -1;
+    if(stats.pct>=100) currentTierIdx=0;
+    else if(stats.pct>=95) currentTierIdx=1;
+    else if(stats.pct>=90) currentTierIdx=2;
+    return {
+      totalCuotas,
+      hasCuotas: totalCuotas > 0,
+      tiers: INCENTIVO_TIERS.map((t,idx) => ({...t, monto: totalCuotas*t.rate, active: idx===currentTierIdx})),
+      currentPct: stats.pct,
+    };
+  }
+  // Semáforo del donut: mismo criterio de "que incomode si va mal" que ya usamos
+  // en el resto de la agenda — verde si va bien, ámbar a medias, rojo si va mal.
+  function fichaPctColor(pct){
+    if(pct>=80) return 'var(--ok)';
+    if(pct>=50) return 'var(--p2)';
+    return 'var(--danger)';
+  }
+  // Anillo de progreso en SVG puro — sin ninguna librería, ni internet.
+  // large=true: versión grande para el encabezado (fondo oscuro).
+  function fichaDonutHTML(stats, large){
+    const r = 40, cx = 50, cy = 50;
+    const circumference = 2 * Math.PI * r;
+    const pct = stats.acumuladas ? stats.pct : 0;
+    const offset = circumference * (1 - pct/100);
+    const color = stats.acumuladas ? fichaPctColor(pct) : (large ? '#4A5A6B' : 'var(--line)');
+    const bgColor = large ? '#2A3B4D' : null;
+    const pctLabel = stats.acumuladas ? `${stats.pct}%` : '—';
+    return `
+    <svg viewBox="0 0 100 100" class="ficha-donut${large?' ficha-donut-lg':''}" role="img" aria-label="Cierre de fichas de la semana: ${pctLabel}">
+      <circle cx="${cx}" cy="${cy}" r="${r}" class="donut-bg"${bgColor?` style="stroke:${bgColor}"`:''}/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" class="donut-fg" style="stroke:${color};stroke-dasharray:${circumference.toFixed(2)};stroke-dashoffset:${offset.toFixed(2)};"/>
+      <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" class="donut-text" style="fill:${color}">${pctLabel}</text>
+    </svg>`;
+  }
+
+  const $ = sel => document.querySelector(sel);
+  const toastEl = $('#toast');
+  function toast(msg, ms){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'), ms||2200); }
+  function escapeHTML(str){ return (str||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  // Interpreta lo que el asesor pegue: puede ser "lat, lng" limpio, o el bloque completo
+  // que copian de sitios tipo gps-coordinates.net / latlong.net ("Latitude: X ... Longitude: Y").
+  function extractLatLng(text){
+    if(!text) return null;
+    let m = text.match(/^(-?\d{1,3}(?:\.\d+)?)\s*[,\s]\s*(-?\d{1,3}(?:\.\d+)?)$/);
+    if(m){
+      const lat=parseFloat(m[1]), lng=parseFloat(m[2]);
+      if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return [lat,lng];
+    }
+    // "Lat\w*" reconoce Latitude, Latitud (español), o cualquier variante — igual
+    // para "Lon\w*" con Longitude/Longitud — así no importa si el navegador tradujo
+    // la página del sitio de coordenadas.
+    const latM = text.match(/Lat\w*[:\s]*(-?\d{1,3}\.\d+)/i);
+    const lngM = text.match(/Lon\w*[:\s]*(-?\d{1,3}\.\d+)/i);
+    if(latM && lngM){
+      const lat=parseFloat(latM[1]), lng=parseFloat(lngM[1]);
+      if(Math.abs(lat)<=90 && Math.abs(lng)<=180) return [lat,lng];
+    }
+    return null;
+  }
+  function nowTime(){ return new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }
+  function fmtDate(dateStr){ const [y,m,d]=dateStr.split('-'); return `${d}/${m}/${y}`; }
+  const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  function fmtDayShort(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const [y,m,dd] = dateStr.split('-');
+    return `${DIAS_CORTOS[d.getDay()]} ${dd}/${m}`;
+  }
+  function toDateStr(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+  function addDays(dateStr, n){
+    const d = new Date(dateStr+'T00:00:00');
+    d.setDate(d.getDate()+n);
+    return toDateStr(d);
+  }
+  function mondayOf(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const day = d.getDay(); // 0 Sun .. 6 Sat
+    const diff = day===0 ? -6 : (1-day);
+    d.setDate(d.getDate()+diff);
+    return toDateStr(d);
+  }
+  function dayGap(fromStr, toStr){
+    const a = new Date(fromStr+'T00:00:00'), b = new Date(toStr+'T00:00:00');
+    return Math.round((b-a)/86400000);
+  }
+  function nextMonday(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const day = d.getDay();
+    let delta = (8-day)%7;
+    if(delta===0) delta=7;
+    d.setDate(d.getDate()+delta);
+    return toDateStr(d);
+  }
+  function isMonday(dateStr){ return new Date(dateStr+'T00:00:00').getDay()===1; }
+  function weekDatesUpTo(dateStr){
+    const mon = mondayOf(dateStr);
+    const out = [];
+    for(let i=0;i<5;i++){
+      const d = addDays(mon,i);
+      out.push(d);
+      if(d===dateStr) break;
+    }
+    if(!out.includes(dateStr) && dateStr>=mon) out.push(dateStr);
+    return out;
+  }
+
+  const fechaInput = $('#fecha'), asesorInput = $('#asesor'), sucursalInput = $('#sucursal');
+  function todayStr(){ return toDateStr(new Date()); }
+  fechaInput.value = todayStr();
+
+  let state = null;
+  let currentLoadedDate = null; // fecha real que representa `state` ahora mismo (no siempre igual a fechaInput.value durante una transición)
+  let weekCache = {}; // dateStr -> state (for weekly calcs)
+  let weeklyGoals = {prospectos:0, desembolsosNuevos:0, renovTotal:0, renovDone:0, metaOk:false};
+  // Nuevo/Renovación/Lead Digital: UNA sola lista persistente, sin cálculo de semana de
+  // por medio (nada de "sábado pertenece a la próxima semana"). Vive igual sin importar
+  // qué día la abras; solo se vacía con "Reiniciar semana".
+  let weekProspectos = [];
+  const PROSPECTOS_KEY = 'agenda:prospectos:activos';
+  // Fichas de la semana: igual que Prospección, una sola lista persistente con fecha
+  // propia por cuenta — nunca se traslada de cubeta, se queda quieta toda la semana.
+  let weekFichas = [];
+  const FICHAS_KEY = 'agenda:fichas:semana';
+  // Mora de la semana pasada: igual patrón — una sola lista persistente. Los días de
+  // atraso se calculan solos (no se guardan fijos), y una cuenta que cruza los 8 días
+  // se sigue mostrando aquí ADEMÁS de aparecer en Seguimiento 8-60 — es la misma cuenta
+  // real en dos vistas, nunca desaparece de esta por haber "graduado".
+  let weekMora17 = [];
+  const MORA17_KEY = 'agenda:mora17:semana';
+  // Prospección y cambaceo (Zona): igual patrón — una sola lista persistente. Antes
+  // vivía por día y se perdía al cambiar de fecha, lo que dejaba huecos de evidencia
+  // sin que nadie los viera. Ahora se queda quieta toda la semana, hasta "Borrar días
+  // anteriores", exactamente como Fichas/Mora17/Desembolsos.
+  let weekZonas = [];
+  const ZONAS_KEY = 'agenda:zonas:semana';
+  // Recuerda qué bloques (01-05) dejaste cerrados, para que no se vuelvan a abrir
+  // solos cada vez que la pantalla se reconstruye por otro cambio.
+  let collapsedSections = { fichas:true, mora17:true, desembolso:true, prospeccion:true, mora860:true };
+
+  function loadWeekProspectos(){
+    const raw = lsGet(PROSPECTOS_KEY);
+    if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+    return [];
+  }
+  function saveWeekProspectos(){
+    lsSet(PROSPECTOS_KEY, JSON.stringify(weekProspectos));
+  }
+  function loadWeekFichas(){
+    const raw = lsGet(FICHAS_KEY);
+    if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+    return [];
+  }
+  function saveWeekFichas(){
+    lsSet(FICHAS_KEY, JSON.stringify(weekFichas));
+  }
+  function loadWeekMora17(){
+    const raw = lsGet(MORA17_KEY);
+    if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+    return [];
+  }
+  function saveWeekMora17(){
+    lsSet(MORA17_KEY, JSON.stringify(weekMora17));
+  }
+  function loadWeekZonas(){
+    const raw = lsGet(ZONAS_KEY);
+    if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+    return [];
+  }
+  function saveWeekZonas(){
+    lsSet(ZONAS_KEY, JSON.stringify(weekZonas));
+  }
+  // Los días de atraso NO se guardan fijos — se calculan cada vez comparando la fecha
+  // en que se capturó la cuenta contra hoy, sumados a los días que ya traía en ese momento.
+  function computeMoraDiasActual(e){
+    const base = parseInt(e.diasInicial,10) || 1;
+    const gap = Math.max(0, dayGap(e.fechaCaptura || e.originDate, fechaInput.value));
+    return base + gap;
+  }
+  function computeMora17Stats(){
+    let pagadas=0, activas=0;
+    weekMora17.forEach(e=>{ if(e.status==='pagado') pagadas++; else activas++; });
+    const total = weekMora17.length;
+    const pct = total ? Math.round(pagadas/total*100) : 0;
+    return { pagadas, activas, total, pct };
+  }
+
+  function emptyState(){
+    const sections = {};
+    SECTIONS.forEach(s => sections[s.key] = []);
+    return { asesor:'', sucursal:'', sections };
+  }
+  function storageKey(dateStr){ return 'agenda:' + dateStr; }
+  const LAST_ACTIVE_KEY = 'agenda:lastActiveDate';
+
+  function lsGet(key){
+    try{ const v = localStorage.getItem(key); return v; }catch(e){ console.error(e); return null; }
+  }
+  function lsSet(key, value){
+    try{ localStorage.setItem(key, value); return true; }
+    catch(e){
+      console.error(e);
+      if(e && e.name==='QuotaExceededError'){ toast('Almacenamiento lleno — usa "Borrar días anteriores" para liberar espacio'); }
+      else{ toast('No se pudo guardar en este dispositivo'); }
+      return false;
+    }
+  }
+  function lsDelete(key){ try{ localStorage.removeItem(key); }catch(e){} }
+  function hasStoredDate(dateStr){ return lsGet(storageKey(dateStr)) !== null; }
+  function getLastActiveDate(){ return lsGet(LAST_ACTIVE_KEY); }
+  function setLastActiveDate(dateStr){ lsSet(LAST_ACTIVE_KEY, dateStr); }
+
+  async function loadState(dateStr){
+    const raw = lsGet(storageKey(dateStr));
+    if(raw){
+      try{
+        const parsed = JSON.parse(raw);
+        SECTIONS.forEach(s=>{ if(!parsed.sections[s.key]) parsed.sections[s.key]=[]; });
+        return parsed;
+      }catch(e){ console.error(e); }
+    }
+    return emptyState();
+  }
+  async function loadConfig(){
+    const raw = lsGet('agenda:config');
+    if(raw){ try{ return JSON.parse(raw); }catch(e){} }
+    return null;
+  }
+  async function saveConfig(){
+    lsSet('agenda:config', JSON.stringify({asesor: state.asesor, sucursal: state.sucursal}));
+  }
+  let saveTimer=null;
+  function saveState(cb){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(async ()=>{
+      if(!currentLoadedDate){ return; }
+      const ok = lsSet(storageKey(currentLoadedDate), JSON.stringify(state));
+      if(ok) setLastActiveDate(currentLoadedDate);
+      if(cb) cb();
+      await refreshWeekly();
+    }, 200);
+  }
+  // Guarda de inmediato, sin esperar el retraso normal — se usa justo antes de
+  // cambiar de fecha, para que el traslado nunca lea datos a medio guardar.
+  function flushSave(){
+    clearTimeout(saveTimer);
+    if(!state || !currentLoadedDate) return;
+    const ok = lsSet(storageKey(currentLoadedDate), JSON.stringify(state));
+    if(ok) setLastActiveDate(currentLoadedDate);
+  }
+
+  // Punto único que decide "a qué lista pertenece cada cuenta" — evita que la lógica
+  // se repita regada por el código (eso fue justo lo que causó el bug de la evidencia
+  // que no se guardaba bien en Fichas de la semana).
+  function persistentListFor(key){
+    if(key==='desembolso') return {arr: weekProspectos, save: saveWeekProspectos};
+    if(key==='fichas') return {arr: weekFichas, save: saveWeekFichas};
+    if(key==='mora17') return {arr: weekMora17, save: saveWeekMora17};
+    if(key==='prospeccion') return {arr: weekZonas, save: saveWeekZonas};
+    return null; // day-scoped: usa state.sections[key]
+  }
+  function counts(sectionState, key){
+    const sec = SECTION_BY_KEY[key];
+    if(key==='mora860'){
+      const list = entryListFor(sec).map(x=>x.e);
+      const done = list.filter(e=>isDone(sec,e)).length;
+      return {done, total: list.length};
+    }
+    const persistent = persistentListFor(key);
+    if(persistent){
+      const done = persistent.arr.filter(e=>isDone(sec,e)).length;
+      return {done, total: persistent.arr.length};
+    }
+    const list = sectionState.sections[key].filter(e=>!e.trasladado);
+    const done = list.filter(e => isDone(sec, e)).length;
+    return {done, total: list.length};
+  }
+  function overallCounts(sectionState){
+    let done=0,total=0;
+    SECTIONS.forEach(s=>{ const c=counts(sectionState,s.key); done+=c.done; total+=c.total; });
+    return {done,total};
+  }
+  function moraCounts(sectionState){
+    let done=0,total=0;
+    ['fichas','mora17','mora860'].forEach(k=>{ const c=counts(sectionState,k); done+=c.done; total+=c.total; });
+    return {done,total};
+  }
+  function renderOverall(){
+    const stats = computeFichaSemanaStats();
+    $('#overallWrap').innerHTML = `
+      <div class="hero-donut-row">
+        <div class="hero-donut-wrap">${fichaDonutHTML(stats, true)}</div>
+        <div class="hero-donut-info">
+          <div class="hero-donut-title">Fichas de la semana</div>
+          <div class="hero-donut-sub">${stats.acumuladas} acumuladas · ${stats.pagadas} cerradas${stats.pendientes?` · ${stats.pendientes} pendiente(s)`:''}</div>
+        </div>
+      </div>`;
+  }
+
+  async function refreshWeekly(){
+    const dates = weekDatesUpTo(fechaInput.value);
+    weekCache = {};
+    for(const d of dates){
+      weekCache[d] = (d===fechaInput.value) ? state : await loadState(d);
+    }
+    // Meta de prospección: Nuevo + LNR + Lead Digital cuentan para los 10/semana y los 2 desembolsos/semana.
+    // Renovación se trabaja igual pero no tiene meta numérica fija (son "todas las que caigan esa semana").
+    // weekProspectos ya es una sola lista por semana (no por día), así que se lee directo.
+    let prospectos=0, desembolsosNuevos=0, renovTotal=0, renovDone=0;
+    weekProspectos.forEach(e=>{
+      if(e.tipo==='Nuevo' || e.tipo==='LNR' || e.tipo==='Lead Digital'){
+        // Lead Digital lo asigna el gerente: "Pendiente" solo cuenta si hay
+        // comentario (prueba de que sí se le dio seguimiento), no por solo anotarlo.
+        const hasComment = e.comment && e.comment.trim().length>0;
+        const countsForGoal = (e.tipo==='Lead Digital' && e.status==='pendiente') ? hasComment : true;
+        if(countsForGoal) prospectos++;
+        if(e.status==='desembolsado') desembolsosNuevos++;
+      } else if(e.tipo==='Renovación'){
+        renovTotal++;
+        if(e.status==='desembolsado' || e.status==='rechazado') renovDone++;
+      }
+    });
+
+    const metaOk = prospectos>=10 && desembolsosNuevos>=2;
+    const badge = $('#weeklyBadge');
+    badge.textContent = metaOk? 'Meta cumplida ✓' : `${prospectos}/10 prospectos · ${desembolsosNuevos}/2 desembolsos`;
+    badge.className = 'weekly-badge ' + (metaOk?'wb-open':'wb-locked');
+
+    weeklyGoals = {prospectos, desembolsosNuevos, renovTotal, renovDone, metaOk};
+
+    $('#comboList').innerHTML = `
+      <div class="combo ${prospectos>=10?'met':''}">
+        <span class="mark">${prospectos>=10?'✓':'○'}</span>
+        <span class="txt">Prospectos enviados a análisis (Nuevo + Lead Digital): <b>${prospectos}/10</b></span>
+      </div>
+      <div class="combo ${desembolsosNuevos>=2?'met':''}">
+        <span class="mark">${desembolsosNuevos>=2?'✓':'○'}</span>
+        <span class="txt">Desembolsos nuevos (Nuevo + Lead Digital): <b>${desembolsosNuevos}/2</b></span>
+      </div>
+      <div class="combo">
+        <span class="mark">—</span>
+        <span class="txt">Renovaciones trabajadas: <b>${renovDone}/${renovTotal}</b> (sin meta fija, son todas las que caigan esta semana)</span>
+      </div>`;
+    $('#weeklyHint').textContent = metaOk
+      ? `Meta de prospección de la semana cumplida.`
+      : `Meta semanal: 10 prospectos enviados a análisis y 2 desembolsos nuevos (Nuevo + Lead Digital). Las renovaciones se trabajan aparte, sin número fijo.`;
+  }
+
+  function statusOptionsHTML(sec, entry){
+    let list = statusList(sec, entry);
+    // Blindaje: si el estatus guardado de verdad no está entre las opciones que se
+    // ofrecen hacia adelante (ej. "En tiempo" ya vencido, a punto de reconciliarse),
+    // lo agregamos igual — el selector nunca debe mostrar algo distinto de lo real.
+    if(!list.some(s => s.v === entry.status)){
+      const allLists = [STATUS_FICHAS, STATUS_MORA, STATUS_PROSPECCION, STATUS_ZONA];
+      let extra = null;
+      for(const l of allLists){ const found = l.find(s=>s.v===entry.status); if(found){ extra = found; break; } }
+      if(extra) list = [extra, ...list];
+    }
+    return list.map(s => `<option value="${s.v}" ${s.v===entry.status?'selected':''}>${s.l}</option>`).join('');
+  }
+
+  // La evidencia ya no es un solo dato — es un registro de visitas (una lista). Así se
+  // puede visitar la misma cuenta varios días seguidos sin perder el historial de antes.
+  // Compatible con datos viejos: si solo existe e.evidence (formato anterior), se lee
+  // como si fuera la única visita registrada.
+  function getEvidenceLog(e){
+    if(e.evidenceLog) return e.evidenceLog;
+    if(e.evidence) return [ Object.assign({}, e.evidence, { date: e.evidence.date || e.statusDate || fechaInput.value }) ];
+    return [];
+  }
+  function latestEvidence(e){
+    const log = getEvidenceLog(e);
+    return log.length ? log[log.length-1] : null;
+  }
+  // ---------- Validación inicio/fin de promoción (solo Zona) ----------
+  // Cada Zona ahora pide DOS registros por recorrido: inicio y fin (foto + coordenadas
+  // + hora en cada uno), para poder comparar dónde empezó, dónde terminó y cuánto
+  // tiempo real estuvo en promoción. La idea (de José): si abre y cierra en el mismo
+  // punto tras mucho tiempo, no es creíble que haya hecho cambaceo; si de verdad hizo
+  // horas de promoción, debería haber movimiento entre el inicio y el fin.
+  // Se guarda como visitas normales de evidenceLog, marcadas con phase:'inicio'/'fin'
+  // alternando — así no se toca el formato de evidencia de las demás cintillas.
+  function nextZonaPhase(e){
+    const log = getEvidenceLog(e);
+    const last = log.length ? log[log.length-1] : null;
+    if(!last || !last.phase) return 'inicio'; // primer registro, o dato viejo sin fase
+    return last.phase==='inicio' ? 'fin' : 'inicio';
+  }
+  // Empareja los registros en el orden en que se capturaron: inicio, fin, inicio, fin...
+  function zonaSessions(e){
+    const log = getEvidenceLog(e).filter(v=>v.phase==='inicio' || v.phase==='fin');
+    const sessions = [];
+    let open = null;
+    log.forEach(v=>{
+      if(v.phase==='inicio'){ open = {inicio:v, fin:null}; sessions.push(open); }
+      else if(v.phase==='fin'){
+        if(open && !open.fin) open.fin = v; else sessions.push({inicio:null, fin:v});
+        open = null;
+      }
+    });
+    return sessions;
+  }
+  function haversineMeters(lat1,lng1,lat2,lng2){
+    if(lat1==null||lng1==null||lat2==null||lng2==null) return null;
+    const R=6371000, toRad=d=>d*Math.PI/180;
+    const dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
+    const a=Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
+    return R*2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+  // nowTime() guarda la hora en formato de 12 horas con a.m./p.m. (ej. "01:54 p.m.") —
+  // hay que convertir ese "01" a 13 antes de restar, si no, una hora de la tarde se lee
+  // como si fuera de la mañana y el cálculo de minutos sale negativo (se veía como "0 min"
+  // aunque en realidad hubieran pasado varias horas entre el inicio y el fin).
+  function timeToMinutes(t){
+    if(!t) return null;
+    const s = t.trim().toLowerCase();
+    const m = s.match(/(\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    let h = parseInt(m[1],10);
+    const min = parseInt(m[2],10);
+    if(isNaN(h)||isNaN(min)) return null;
+    const isPM = /p\.?\s*m\.?/.test(s);
+    const isAM = /a\.?\s*m\.?/.test(s);
+    if(isPM && h<12) h += 12;
+    if(isAM && h===12) h = 0;
+    return h*60+min;
+  }
+  // La distancia en línea recta es siempre orientativa (cruza edificios, calles, no es
+  // la ruta real caminada), así que la agenda YA NO redacta un veredicto de texto — solo
+  // resalta minutos y metros con más o menos fuerza de color, y deja el criterio final
+  // al gerente o al propio asesor, con un enlace para ver la ruta en el mapa y decidir
+  // con contexto real. Niveles (ajustables si hace falta):
+  // - Menos de 300m entre inicio y fin: 🔴 revisar con prioridad.
+  // - Entre 300 y 500m: 🟠 revisar con contexto (puede ser zona compacta, cuadras cortas).
+  // - 500m o más: 🟢 sin señal de alerta.
+  // Aparte, menos de 3 min entre inicio y fin casi seguro no fue cambaceo real, sin
+  // importar la distancia — eso siempre marca 🔴.
+  const ZONA_DIST_CRITICAL_M = 300;
+  const ZONA_DIST_WARN_M = 500;
+  function zonaSessionStats(session){
+    const {inicio, fin} = session;
+    if(!inicio || !fin) return null;
+    let elapsedMin = null;
+    if(inicio.date && inicio.date===fin.date){
+      const t1 = timeToMinutes(inicio.time), t2 = timeToMinutes(fin.time);
+      if(t1!=null && t2!=null) elapsedMin = Math.max(0, t2-t1);
+    }
+    const dist = haversineMeters(inicio.lat, inicio.lng, fin.lat, fin.lng);
+    let level = 'ok';
+    if(elapsedMin!=null && elapsedMin < 3) level = 'critical';
+    else if(dist!=null){
+      if(dist < ZONA_DIST_CRITICAL_M) level = 'critical';
+      else if(dist < ZONA_DIST_WARN_M) level = 'warn';
+    }
+    const mapUrl = (inicio.lat!=null && fin.lat!=null)
+      ? `https://www.google.com/maps/dir/?api=1&origin=${inicio.lat},${inicio.lng}&destination=${fin.lat},${fin.lng}&travelmode=walking`
+      : null;
+    return { elapsedMin, dist, level, mapUrl };
+  }
+  function zonaLevelColor(level){
+    if(level==='critical') return '#B3261E';
+    if(level==='warn') return '#8A5A00';
+    return '#2F7A4D';
+  }
+  function zonaLevelIcon(level){
+    if(level==='critical') return '🔴';
+    if(level==='warn') return '🟠';
+    return '🟢';
+  }
+  // Línea de validación lista para mostrar (pantalla, PDF, WhatsApp) — prioriza avisar
+  // si quedó una promoción a medias (inicio sin fin) sobre mostrar la última completa.
+  function zonaValidationLine(e){
+    if(!(e && e.tipo==='Zona')) return null;
+    const sessions = zonaSessions(e);
+    if(!sessions.length) return null;
+    const last = sessions[sessions.length-1];
+    if(last.inicio && !last.fin){
+      return { level:'critical', text:`promoción iniciada ${fmtDate(last.inicio.date)}${last.inicio.time?' '+last.inicio.time:''} sin registrar el cierre`, mapUrl:null };
+    }
+    const completed = sessions.filter(s=>s.inicio && s.fin);
+    if(!completed.length) return null;
+    const stats = zonaSessionStats(completed[completed.length-1]);
+    if(!stats) return null;
+    const parts = [];
+    if(stats.elapsedMin!=null) parts.push(`${stats.elapsedMin} min`);
+    if(stats.dist!=null) parts.push(`${Math.round(stats.dist)} m`);
+    if(!parts.length) return null;
+    return { level: stats.level, text: parts.join(' · '), mapUrl: stats.mapUrl };
+  }
+  // Resumen de cambaceo de la semana: una fila por CADA promoción completa (inicio+fin)
+  // de CADA Zona capturada esta semana — para verla toda junta de un vistazo, en vez de
+  // tener que abrir cuenta por cuenta. Incluye las que ya se marcaron "Realizado" (ahí
+  // es donde importa más auditar, ya que se dan por cerradas).
+  function computeZonaWeekSummary(){
+    const rows = [];
+    weekZonas.forEach(e=>{
+      if(e.tipo!=='Zona') return;
+      const completed = zonaSessions(e).filter(s=>s.inicio && s.fin);
+      completed.forEach(session=>{
+        const stats = zonaSessionStats(session);
+        if(!stats) return;
+        rows.push({
+          name: e.name,
+          date: session.fin.date || session.inicio.date,
+          elapsedMin: stats.elapsedMin,
+          dist: stats.dist,
+          level: stats.level,
+          mapUrl: stats.mapUrl
+        });
+      });
+    });
+    // Más recientes primero.
+    rows.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+    return rows;
+  }
+  // Cuándo aplica pedir evidencia (foto + coordenadas):
+  // - Mora de la semana pasada: mientras no esté pagada (incluye Pago parcial).
+  // - Fichas de la semana: "Complicada" o "Pago parcial" (probablemente no cierre completo,
+  //   toca ir presencial a validar).
+  // - Prospección: solo Zona (cambaceo), mientras no esté "Realizado".
+  function evidenceApplies(sec, e){
+    if(sec.key==='mora17') return e.status!=='pagado';
+    if(sec.key==='fichas') return e.status==='complicada' || e.status==='parcial';
+    if(sec.key==='prospeccion') return e.tipo==='Zona' && e.status!=='realizado';
+    return false;
+  }
+  // Nomenclatura compacta para reportes: CF/SF = Con/Sin Foto, CC/SC = Con/Sin Coordenadas.
+  // Se basa en la ÚLTIMA visita registrada.
+  function evidenceTag(sec, e){
+    if(!evidenceApplies(sec, e)) return null;
+    const latest = latestEvidence(e);
+    const f = (latest && latest.photo) ? 'CF' : 'SF';
+    const c = (latest && latest.lat!=null) ? 'CC' : 'SC';
+    return { text: `${f}·${c}`, ok: f==='CF' && c==='CC' };
+  }
+  function evidenceHTML(sec, key, i, e){
+    if(!evidenceApplies(sec, e)) return '';
+    const isZona = sec.key==='prospeccion' && e.tipo==='Zona';
+    const mapsHelper = `<a class="maplink" href="https://www.gps-coordinates.net/my-location" target="_blank" rel="noopener">📍 Obtener mis coordenadas</a>`;
+    const log = getEvidenceLog(e);
+    const latest = log.length ? log[log.length-1] : null;
+    const latestIdx = log.length - 1;
+    let html = '<div class="evidence-row">';
+    if(latest){
+      const mapUrl = (latest.lat!=null) ? `https://www.google.com/maps?q=${latest.lat},${latest.lng}` : null;
+      const label = isZona && latest.phase ? (latest.phase==='inicio'?'Inicio de promoción':'Fin de promoción') : 'Última visita';
+      html += `
+        <span class="evidence-ok">
+          ${latest.photo?`<img src="${latest.photo}" alt="evidencia — toca para ampliar" data-action="zoom">`:''}
+          ✓ ${label}: ${latest.date?fmtDate(latest.date):''}${latest.time?(' · '+latest.time):''}
+        </span>
+        ${mapUrl?`<a class="maplink" href="${mapUrl}" target="_blank" rel="noopener">📍 Ver ubicación</a>`:`<span class="maplink-off">ubicación no disponible</span> ${mapsHelper}`}
+      `;
+    } else {
+      html += `<span class="evidence-warn">⚠ sin evidencia</span>`;
+    }
+    // El botón SIEMPRE queda disponible. En Zona alterna inicio/fin de la promoción;
+    // en las demás cintillas, deja registrar una visita nueva cada vez.
+    let btnLabel;
+    if(isZona){
+      btnLabel = nextZonaPhase(e)==='inicio' ? '🚶 Iniciar promoción' : '🏁 Finalizar promoción';
+    } else {
+      btnLabel = `📸 ${log.length?'Registrar otra visita':'Registrar visita presencial'}`;
+    }
+    html += `<button class="btn-evidence" data-action="evidence" data-key="${key}" data-i="${i}">${btnLabel}</button>`;
+    if(log.length>0){
+      const fotosCount = log.filter(v=>v.photo).length;
+      const coordsCount = log.filter(v=>v.lat!=null).length;
+      const countLabel = isZona ? 'registro(s)' : 'visita(s)';
+      html += `<span class="visit-count">${log.length} ${countLabel} · ${fotosCount} foto(s) · ${coordsCount} coordenada(s)</span>`;
+    }
+    html += '</div>';
+    if(isZona){
+      const vline = zonaValidationLine(e);
+      if(vline){
+        const routeLink = vline.mapUrl ? ` <a class="maplink" href="${vline.mapUrl}" target="_blank" rel="noopener">🗺️ Ver ruta inicio→fin</a>` : '';
+        html += `<p class="zona-validation" style="color:${zonaLevelColor(vline.level)}">${zonaLevelIcon(vline.level)} ${escapeHTML(vline.text)}${routeLink}</p>`;
+      }
+    }
+    if(latest && latest.lat==null){
+      html += `
+      <p class="maps-hint">No hay mapa que mover — solo lee tu ubicación real. Copia los números que te dé y pégalos aquí:</p>
+      <input type="text" class="coords-input" placeholder="Pega aquí: latitud, longitud" value="${escapeHTML(latest.pastedCoords||'')}" data-action="coords" data-vidx="${latestIdx}">
+      `;
+    }
+    return html;
+  }
+
+  function entryListFor(sec){
+    if(sec.key==='mora860'){
+      const fromDay = state.sections.mora860.map((e,i)=>({e, i, source:'day'}));
+      const fromMora17 = weekMora17
+        .map((e,i)=>({e, i, source:'mora17week'}))
+        .filter(({e}) => computeMoraDiasActual(e)>=8 && e.status!=='pagado');
+      return [...fromDay, ...fromMora17];
+    }
+    const persistent = persistentListFor(sec.key);
+    if(persistent){
+      return persistent.arr.map((e,i)=>({e, i, source:'week'}));
+    }
+    return state.sections[sec.key].map((e,i)=>({e, i, source:'day'}));
+  }
+
+  let captureExpanded = { fichas:false, mora17:false, desembolso:false, prospeccion:false, mora860:false };
+  function fichaCardHTML(sec, e, i, source){
+    const st = statusInfo(sec, e);
+    const needsEvidence = evidenceApplies(sec, e) && getEvidenceLog(e).length===0 && !e.trasladado;
+    const needsFollowupProof = sec.key==='desembolso' && e.tipo==='Lead Digital' && e.status==='pendiente' && !(e.comment && e.comment.trim().length>0);
+    const staleTag = isStale(sec, e) ? staleDays(e) : 0;
+    const canDelete = source==='mora17week' ? false : !(source==='week' && e.originDate && e.originDate!==fechaInput.value);
+    const isMora17Persistent = sec.key==='mora17' || source==='mora17week';
+    let detailDisplay = e.detail||'';
+    let detailWarnClass = '';
+    if(isMora17Persistent){
+      const n = computeMoraDiasActual(e);
+      detailDisplay = `Atraso ${n} día${n===1?'':'s'}`;
+      if(n===7) detailWarnClass = ' tag-danger';
+      else if(n===6) detailWarnClass = ' tag-warn';
+      else if(n>=8) detailWarnClass = ' tag-danger';
+    } else if(sec.detailType==='number' && e.detail){
+      const n = parseInt(e.detail,10);
+      if(!isNaN(n)){
+        detailDisplay = `Atraso ${n} día${n===1?'':'s'}`;
+      }
+    }
+    const isFichas = sec.key==='fichas';
+    const bucket = isFichas ? fichaBucket(e) : null;
+    const isPagadaFicha = bucket==='pagada';
+    const isNoPagadaFicha = bucket==='nopagada';
+    const isParcialFicha = bucket==='parcial';
+    const fechaTag = (isFichas && e.fechaPago) ? `<span class="ficha-tag-sm${isNoPagadaFicha?' tag-danger':''}">${fmtDayShort(e.fechaPago)}</span>` : '';
+    const crossRefTag = source==='mora17week'
+      ? `<span class="ficha-tag-sm cross-ref">· de Mora sem. pasada</span>`
+      : (sec.key==='mora17' && computeMoraDiasActual(e)>=8 && e.status!=='pagado')
+        ? `<span class="ficha-tag-sm cross-ref">· también en 8-60</span>`
+        : '';
+    return `
+    <div class="ficha ${e.trasladado?'trasladado':''} ${isPagadaFicha?'ficha-pagada':''} ${isNoPagadaFicha?'ficha-nopagada':''} ${isParcialFicha?'ficha-parcial':''}" data-key="${sec.key}" data-i="${i}" data-source="${source}">
+      <div class="ficha-row">
+        <span class="ficha-name">${escapeHTML(e.name)}</span>
+        ${fechaTag}
+        ${detailDisplay?`<span class="ficha-tag-sm${detailWarnClass}">${escapeHTML(detailDisplay)}</span>`:''}
+        ${(e.tipo && e.tipo!=='Zona')?`<span class="ficha-tag-sm">${escapeHTML(e.tipo)}</span>`:''}
+        ${crossRefTag}
+        <select class="status-select ${st.cls}" data-action="status" ${e.trasladado?'disabled':''}>${statusOptionsHTML(sec, e)}</select>
+        ${canDelete ? `<button class="ficha-del" title="Eliminar" data-action="del">✕</button>` : `<span class="locked-tag" title="Ya no se puede borrar — solo cambiar estatus">🔒</span>`}
+      </div>
+      ${isPagadaFicha ? '' : `<input type="text" class="ficha-comment" placeholder="Comentario..." value="${escapeHTML(e.comment||'')}" data-action="comment" ${e.trasladado?'disabled':''}>`}
+      ${isFichas ? `<div class="ficha-cuota-row"><span class="cuota-label">Cuota:</span><input type="number" class="ficha-cuota" placeholder="0" min="0" step="1" value="${e.cuota!=null?e.cuota:''}" data-action="cuota"></div>` : ''}
+      ${(e.trasladado || needsFollowupProof || staleTag || isNoPagadaFicha || isParcialFicha) ? `
+      <div class="ficha-warn-row">
+        ${e.trasladado?`<span class="traslado-tag">→ trasladada</span>`:''}
+        ${needsFollowupProof?`<span class="evidence-warn">⚠ agrega comentario para que cuente</span>`:''}
+        ${staleTag?`<span class="evidence-warn">⚠ ${staleTag} días sin actualizar</span>`:''}
+        ${isNoPagadaFicha?`<span class="evidence-warn">⚠ no pagada</span>`:''}
+        ${isParcialFicha?`<span class="parcial-tag">◐ pago parcial — sigue pendiente el resto</span>`:''}
+      </div>` : ''}
+      ${evidenceHTML(sec, sec.key, i, e)}
+    </div>`;
+  }
+
+  function renderSections(){
+    reconcileFichaStatuses(); // blindaje: se revisa en cada dibujado, no solo al abrir la fecha
+    const wrap = $('#sectionsWrap');
+    wrap.innerHTML = SECTIONS.map(sec => {
+      const list = entryListFor(sec);
+      const c = counts(state, sec.key);
+
+      // ---- Fichas de la semana: layout especial (banner de estadísticas arriba,
+      // pagadas tachadas y agrupadas aparte, captura colapsable abajo) ----
+      if(sec.key==='mora17'){
+        const stats = computeMora17Stats();
+        const active = list.filter(({e})=>e.status!=='pagado')
+          .sort((a,b)=>computeMoraDiasActual(b.e)-computeMoraDiasActual(a.e));
+        const pagadas = list.filter(({e})=>e.status==='pagado');
+        const activeHTML = active.length ? active.map(({e,i,source})=>fichaCardHTML(sec,e,i,source)).join('') : `<div class="empty">Sin cuentas activas — agrega las de la semana pasada abajo.</div>`;
+        const pagadasHTML = pagadas.length ? `
+          <div class="fichas-pagadas-block">
+            <div class="fichas-pagadas-label">✓ Pagadas (${pagadas.length})</div>
+            <div class="entries">${pagadas.map(({e,i,source})=>fichaCardHTML(sec,e,i,source)).join('')}</div>
+          </div>` : '';
+        const collapsed = collapsedSections[sec.key];
+        return `
+        <div class="section ${sec.id}" data-key="${sec.key}">
+          <div class="tab ${collapsed?'collapsed':''}" data-action="toggle">
+            <span class="idx">${sec.idx}</span><span class="title">${sec.title}</span>
+            <span class="count">${c.done}/${c.total}</span><span class="chev">▾</span>
+          </div>
+          <div class="panel ${collapsed?'hidden':''}">
+            <div class="mora17-stats-banner">
+              ${fichaDonutHTML({acumuladas: stats.total, pct: stats.pct})}
+              <div class="mora17-stats-info"><b>${stats.total}</b> cuenta(s) capturadas · <b>${stats.pagadas}</b> cerradas${stats.activas?` · ${stats.activas} activa(s)`:''}</div>
+            </div>
+            <p class="hint">${sec.hint}</p>
+            <div class="entries">${activeHTML}</div>
+            ${pagadasHTML}
+            <div class="add-row-wrap capture-collapsible ${captureExpanded.mora17?'':'collapsed'}" data-action="toggle-capture">
+              <span class="add-row-label">${captureExpanded.mora17?'− Nueva captura':'+ Agregar cuenta de la semana pasada'}</span>
+              <div class="add-row ${captureExpanded.mora17?'':'hidden'}">
+                <input type="text" placeholder="${sec.namePh}" data-field="name">
+                <input type="number" placeholder="${sec.detailPh}" data-field="detail">
+                <button class="btn btn-add" data-action="add">+ Agregar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      if(sec.key==='fichas'){
+        const stats = computeFichaSemanaStats();
+        const active = list.filter(({e})=>fichaBucket(e)!=='pagada')
+          .sort((a,b)=>(a.e.fechaPago||'').localeCompare(b.e.fechaPago||''));
+        const pagadas = list.filter(({e})=>fichaBucket(e)==='pagada');
+        const activeHTML = active.length ? active.map(({e,i,source})=>fichaCardHTML(sec,e,i,source)).join('') : `<div class="empty">Sin fichas activas — agrega las de la semana abajo.</div>`;
+        const pagadasHTML = pagadas.length ? `
+          <div class="fichas-pagadas-block">
+            <div class="fichas-pagadas-label">✓ Pagadas (${pagadas.length})</div>
+            <div class="entries">${pagadas.map(({e,i,source})=>fichaCardHTML(sec,e,i,source)).join('')}</div>
+          </div>` : '';
+        const collapsed = collapsedSections[sec.key];
+        return `
+        <div class="section ${sec.id}" data-key="${sec.key}">
+          <div class="tab ${collapsed?'collapsed':''}" data-action="toggle">
+            <span class="idx">${sec.idx}</span><span class="title">${sec.title}</span>
+            <span class="count">${c.done}/${c.total}</span><span class="chev">▾</span>
+          </div>
+          <div class="panel ${collapsed?'hidden':''}">
+            <div class="ficha-stats-line">${stats.acumuladas} ficha(s) acumuladas · ${stats.pagadas} cerradas${stats.pendientes?` · ${stats.pendientes} pendiente(s) esta semana`:''}</div>
+            ${(()=>{ const inc = computeIncentivoStats(); if(!inc.hasCuotas) return ''; return `
+            <div class="incentivo-box">
+              <div class="incentivo-title">Incentivo semanal — total cuotas: $${inc.totalCuotas.toLocaleString('es-MX',{maximumFractionDigits:0})}</div>
+              <div class="incentivo-tiers">
+                ${inc.tiers.map(t=>`
+                  <div class="incentivo-tier ${t.active?'active':''}">
+                    <div class="it-pct">${t.label}</div>
+                    <div class="it-rate">${(t.rate*100).toFixed(1)}%</div>
+                    <div class="it-monto">$${t.monto.toLocaleString('es-MX',{maximumFractionDigits:0})}</div>
+                  </div>`).join('')}
+              </div>
+              <div class="incentivo-note">Suma de todas las fichas de la semana, aunque aún no venzan — si cierras el 100/95/90% de todo lo que traes, esto ganas. Menos de 90% de cierre no genera este incentivo. La cuota se puede agregar o corregir en cualquier ficha, aunque ya esté capturada.</div>
+            </div>`; })()}
+            <p class="hint">${sec.hint}</p>
+            <div class="entries">${activeHTML}</div>
+            ${pagadasHTML}
+            <div class="add-row-wrap capture-collapsible ${captureExpanded.fichas?'':'collapsed'}" data-action="toggle-capture">
+              <span class="add-row-label">${captureExpanded.fichas?'− Nueva captura':'+ Agregar ficha de la semana'}</span>
+              <div class="add-row ${captureExpanded.fichas?'':'hidden'}">
+                <input type="text" placeholder="${sec.namePh}" data-field="name">
+                <input type="date" data-field="fechaPago" title="Fecha de pago">
+                <input type="number" placeholder="Cuota (opcional)" data-field="cuota" min="0" step="1">
+                <select data-field="statusPick">
+                  <option value="" disabled selected>Selecciona estatus</option>
+                  ${STATUS_FICHAS.map(s=>`<option value="${s.v}">${s.l}</option>`).join('')}
+                </select>
+                <button class="btn btn-add" data-action="add">+ Agregar</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+
+      const entriesHTML = list.length ? list.map(({e,i,source}) => fichaCardHTML(sec, e, i, source)).join('') : `<div class="empty">Sin cuentas capturadas en este bloque.</div>`;
+
+      const collapsed = collapsedSections[sec.key];
+      const capExp = captureExpanded[sec.key];
+      return `
+      <div class="section ${sec.id}" data-key="${sec.key}">
+        <div class="tab ${collapsed?'collapsed':''}" data-action="toggle">
+          <span class="idx">${sec.idx}</span><span class="title">${sec.title}</span>
+          <span class="count">${c.done}/${c.total}</span><span class="chev">▾</span>
+        </div>
+        <div class="panel ${collapsed?'hidden':''}">
+          <p class="hint">${sec.hint}</p>
+          <div class="entries">${entriesHTML}</div>
+          <div class="add-row-wrap capture-collapsible ${capExp?'':'collapsed'}" data-action="toggle-capture">
+            <span class="add-row-label">${capExp?'− Nueva captura':'+ Agregar cuenta'}</span>
+            <div class="add-row ${capExp?'':'hidden'}">
+              <input type="text" placeholder="${sec.namePh}" data-field="name">
+              ${sec.captureStatus ? `
+              <select data-field="statusPick">
+                <option value="" disabled selected>Selecciona estatus</option>
+                ${STATUS_FICHAS.map(s=>`<option value="${s.v}">${s.l}</option>`).join('')}
+              </select>` : `
+              <input type="${sec.detailType||'text'}" placeholder="${sec.detailPh}" data-field="detail">`}
+              ${sec.extraField==='tipoDesembolso' ? `
+              <select data-field="tipoDesembolso">
+                <option value="Nuevo">Nuevo</option>
+                <option value="Renovación">Renovación</option>
+                <option value="LNR">LNR (Liquidado No Renovado)</option>
+                <option value="Lead Digital">Lead Digital</option>
+              </select>` : ''}
+              <button class="btn btn-add" data-action="add">+ Agregar</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    wrap.querySelectorAll('.tab[data-action="toggle"]').forEach(tab=>{
+      tab.addEventListener('click', ()=>{
+        const key = tab.closest('.section').dataset.key;
+        collapsedSections[key] = !collapsedSections[key];
+        const panel = tab.nextElementSibling;
+        panel.classList.toggle('hidden');
+        tab.classList.toggle('collapsed');
+      });
+    });
+    wrap.querySelectorAll('[data-action="toggle-capture"]').forEach(capToggle=>{
+      const key = capToggle.closest('.section').dataset.key;
+      const defaultLabel = key==='fichas' ? '+ Agregar ficha de la semana' : key==='mora17' ? '+ Agregar cuenta de la semana pasada' : '+ Agregar cuenta';
+      capToggle.querySelector('.add-row-label').addEventListener('click', ()=>{
+        captureExpanded[key] = !captureExpanded[key];
+        capToggle.classList.toggle('collapsed');
+        capToggle.querySelector('.add-row').classList.toggle('hidden');
+        capToggle.querySelector('.add-row-label').textContent = captureExpanded[key] ? '− Nueva captura' : defaultLabel;
+      });
+    });
+    wrap.querySelectorAll('[data-action="add"]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const row = btn.closest('.add-row');
+        const key = btn.closest('.section').dataset.key;
+        const sec = SECTION_BY_KEY[key];
+        const nameInput = row.querySelector('[data-field="name"]');
+        const name = nameInput.value.trim();
+        if(!name){ nameInput.focus(); return; }
+        let detail='', status='pendiente', statusTime=null;
+        if(sec.captureStatus){
+          const sel = row.querySelector('[data-field="statusPick"]');
+          if(!sel.value){ sel.focus(); toast('Selecciona un estatus para continuar'); return; }
+          status = sel.value; statusTime = nowTime();
+        } else {
+          const detailInput = row.querySelector('[data-field="detail"]');
+          detail = detailInput.value.trim();
+        }
+        let fechaPago = '';
+        let cuota = null;
+        if(key==='fichas'){
+          const fechaInput2 = row.querySelector('[data-field="fechaPago"]');
+          fechaPago = fechaInput2 ? fechaInput2.value : '';
+          if(!fechaPago){ fechaInput2.focus(); toast('Elige la fecha de pago'); return; }
+          const cuotaInput = row.querySelector('[data-field="cuota"]');
+          cuota = (cuotaInput && cuotaInput.value) ? parseFloat(cuotaInput.value) : null;
+        }
+        let tipo = '';
+        if(key==='prospeccion'){
+          tipo = 'Zona';
+        } else if(sec.extraField==='tipoDesembolso'){
+          const tipoSel = row.querySelector('[data-field="tipoDesembolso"]');
+          tipo = tipoSel ? tipoSel.value : '';
+        }
+        const newEntry = {name, detail, status, comment:'', statusTime, statusDate: sec.captureStatus?fechaInput.value:null, evidence:null, trasladado:false, originKey:key, originDate: fechaInput.value, tipo, fechaPago, cuota, diasInicial: key==='mora17' ? (parseInt(detail,10)||1) : undefined, fechaCaptura: key==='mora17' ? fechaInput.value : undefined};
+        if(key==='desembolso'){
+          weekProspectos.push(newEntry);
+          saveWeekProspectos();
+        } else if(key==='fichas'){
+          weekFichas.push(newEntry);
+          saveWeekFichas();
+        } else if(key==='mora17'){
+          newEntry.status = 'pendiente';
+          weekMora17.push(newEntry);
+          saveWeekMora17();
+        } else if(key==='prospeccion'){
+          weekZonas.push(newEntry);
+          saveWeekZonas();
+        } else {
+          state.sections[key].push(newEntry);
+          saveState();
+        }
+        nameInput.value='';
+        if(sec.captureStatus){ row.querySelector('[data-field="statusPick"]').value=''; } else { const di=row.querySelector('[data-field="detail"]'); if(di) di.value=''; }
+        if(key==='fichas'){ row.querySelector('[data-field="fechaPago"]').value=''; const cq=row.querySelector('[data-field="cuota"]'); if(cq) cq.value=''; }
+        renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+      });
+    });
+    wrap.querySelectorAll('.add-row input').forEach(inp=>{
+      inp.addEventListener('keydown', ev=>{ if(ev.key==='Enter'){ ev.preventDefault(); inp.closest('.add-row').querySelector('[data-action="add"]').click(); } });
+    });
+    wrap.querySelectorAll('.ficha').forEach(card=>{
+      const key = card.dataset.key, i = parseInt(card.dataset.i,10), source = card.dataset.source;
+      // "mora17week": esta tarjeta se está viendo desde Seguimiento 8-60, pero la cuenta
+      // de verdad vive en la lista de Mora de la semana pasada — hay que guardar ahí,
+      // para que sea la misma cuenta real en ambos lados, no una copia aparte.
+      const persistentTarget = source==='mora17week' ? {arr: weekMora17, save: saveWeekMora17} : persistentListFor(key);
+      const arr = persistentTarget ? persistentTarget.arr : state.sections[key];
+      const persist = persistentTarget ? persistentTarget.save : saveState;
+      const delBtn = card.querySelector('[data-action="del"]');
+      if(delBtn) delBtn.addEventListener('click', ()=>{
+        arr.splice(i,1); persist(); renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+      });
+      const sel = card.querySelector('[data-action="status"]');
+      if(sel) sel.addEventListener('change', ev=>{
+        arr[i].status = ev.target.value;
+        arr[i].statusTime = nowTime();
+        arr[i].statusDate = fechaInput.value;
+        persist(); renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+      });
+      const com = card.querySelector('[data-action="comment"]');
+      if(com){
+        com.addEventListener('input', ev=>{ arr[i].comment = ev.target.value; persist(); });
+        com.addEventListener('blur', ()=>{ renderSections(); renderOverall(); renderBanners(); refreshWeekly(); });
+      }
+      const cuotaInput = card.querySelector('[data-action="cuota"]');
+      if(cuotaInput){
+        cuotaInput.addEventListener('input', ev=>{
+          const v = ev.target.value;
+          arr[i].cuota = v==='' ? null : parseFloat(v);
+          persist();
+        });
+        cuotaInput.addEventListener('blur', ()=>{ renderSections(); renderOverall(); renderBanners(); refreshWeekly(); });
+      }
+      const evBtn = card.querySelector('[data-action="evidence"]');
+      if(evBtn) evBtn.addEventListener('click', ()=> startEvidenceCapture(key, i));
+      const coordsInput = card.querySelector('[data-action="coords"]');
+      if(coordsInput){
+        let coordsDebounce = null;
+        const vidx = parseInt(coordsInput.dataset.vidx, 10);
+        const processCoords = ()=>{
+          const log = getEvidenceLog(arr[i]);
+          const visit = log[vidx];
+          if(!visit) return;
+          const raw = coordsInput.value.trim();
+          visit.pastedCoords = raw;
+          const parsed = extractLatLng(raw);
+          if(parsed){
+            visit.lat = parsed[0]; visit.lng = parsed[1];
+            toast('Ubicación agregada ✓');
+          } else if(raw){
+            toast('No reconocí coordenadas ahí — igual se guardó el texto para el reporte');
+          }
+          arr[i].evidenceLog = log;
+          persist(); renderSections(); renderOverall();
+        };
+        // 'input' cubre el pegado real (funciona aunque no toquen fuera del cuadro
+        // después) — con un pequeño retraso para no interrumpir si están escribiendo
+        // a mano letra por letra. 'blur' queda como respaldo por si acaso.
+        coordsInput.addEventListener('input', ()=>{
+          clearTimeout(coordsDebounce);
+          coordsDebounce = setTimeout(processCoords, 400);
+        });
+        coordsInput.addEventListener('blur', ()=>{ clearTimeout(coordsDebounce); processCoords(); });
+      }
+    });
+  }
+
+  // ---------- Evidence capture (selfie + GPS) ----------
+  const cameraInput = $('#cameraInput');
+  let pendingEvidence = null;
+  function startEvidenceCapture(key, i){
+    pendingEvidence = {key, i};
+    cameraInput.value = '';
+    cameraInput.click();
+  }
+  cameraInput.addEventListener('change', async ()=>{
+    if(!pendingEvidence || !cameraInput.files || !cameraInput.files[0]) return;
+    const {key,i} = pendingEvidence;
+    toast('Procesando evidencia...');
+    try{
+      const photo = await compressImage(cameraInput.files[0]);
+      let lat=null, lng=null, locError=null;
+      if(!window.isSecureContext){
+        locError = 'sin GPS: se necesita abrir esta página por https';
+        toast('Foto guardada — el GPS necesita que la página esté en https, no como archivo local');
+      } else {
+        try{
+          const pos = await getPosition();
+          lat=pos.coords.latitude; lng=pos.coords.longitude;
+        }catch(e){
+          if(e && e.code===1) locError='sin GPS: permiso denegado';
+          else if(e && e.code===2) locError='sin GPS: ubicación no disponible';
+          else if(e && e.code===3) locError='sin GPS: tardó demasiado';
+          else locError='sin GPS: no disponible';
+          toast('Foto guardada — ubicación no disponible');
+        }
+      }
+      const persistentTarget = persistentListFor(key);
+      const targetArr = persistentTarget ? persistentTarget.arr : state.sections[key];
+      if(!targetArr || !targetArr[i]) throw new Error(`registro no encontrado (${key}[${i}])`);
+      const entry = targetArr[i];
+      if(!entry.evidenceLog) entry.evidenceLog = entry.evidence ? [Object.assign({}, entry.evidence, {date: entry.evidence.date || entry.statusDate || fechaInput.value})] : [];
+      const visit = {photo, lat, lng, locError, pastedCoords:'', time: nowTime(), date: fechaInput.value};
+      const isZonaEntry = key==='prospeccion' && entry.tipo==='Zona';
+      if(isZonaEntry) visit.phase = nextZonaPhase(entry);
+      entry.evidenceLog.push(visit);
+      if(persistentTarget){ persistentTarget.save(); } else { saveState(); }
+      renderSections(); renderOverall();
+      toast(isZonaEntry ? (visit.phase==='inicio' ? 'Inicio de promoción registrado ✓' : 'Fin de promoción registrado ✓') : 'Visita registrada ✓');
+    }catch(e){
+      console.error('Fallo al procesar evidencia:', e);
+      const f = cameraInput.files && cameraInput.files[0];
+      const fileInfo = f ? ` [${f.type||'sin tipo'} · ${Math.round((f.size||0)/1024)}KB]` : ' [sin archivo]';
+      const detail = (e && (e.message || e.name)) ? `: ${e.message || e.name}` : '';
+      toast('No se pudo procesar la evidencia' + detail + fileInfo, 6000);
+    }
+    pendingEvidence = null;
+  });
+  function getPosition(){
+    return new Promise((res,rej)=>{
+      if(!navigator.geolocation){ rej(new Error('no geo')); return; }
+      navigator.geolocation.getCurrentPosition(res, rej, {enableHighAccuracy:true, timeout:8000});
+    });
+  }
+  function compressImage(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>{
+        try{
+          const img = new Image();
+          img.onload = ()=>{
+            try{
+              const maxW = 420;
+              const scale = Math.min(1, maxW/img.width);
+              const canvas = document.createElement('canvas');
+              canvas.width = Math.max(1, Math.round(img.width*scale));
+              canvas.height = Math.max(1, Math.round(img.height*scale));
+              const ctx = canvas.getContext('2d');
+              if(!ctx) throw new Error('sin contexto de canvas disponible');
+              ctx.drawImage(img,0,0,canvas.width,canvas.height);
+              const dataUrl = canvas.toDataURL('image/jpeg', 0.55);
+              if(!dataUrl || dataUrl==='data:,') throw new Error('canvas vacío al comprimir');
+              resolve(dataUrl);
+            }catch(err){
+              // La compresión falló (memoria baja, límite de canvas del equipo, etc.) —
+              // mejor guardar la foto tal cual, sin redimensionar, que perder la evidencia.
+              console.error('Compresión falló, se guarda la foto original:', err);
+              resolve(reader.result);
+            }
+          };
+          img.onerror = ()=>{
+            console.error('No se pudo decodificar la imagen para comprimir, se guarda el archivo original');
+            resolve(reader.result);
+          };
+          img.src = reader.result;
+        }catch(err){
+          reject(err);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Carry over (días naturales) ----------
+  // Traslada las cuentas no resueltas de fromState/fromDateStr hacia toDateStr,
+  // avanzando "días de atraso" por la diferencia real de días naturales (cuentan
+  // sábado y domingo). Devuelve el nuevo estado del día destino.
+  async function computeCarry(fromState, fromDateStr, toDateStr){
+    const gap = dayGap(fromDateStr, toDateStr);
+    let toState = await loadState(toDateStr);
+    let moved = 0;
+    const srcKey = 'mora860';
+    const srcSec = SECTION_BY_KEY[srcKey];
+    fromState.sections[srcKey].forEach(entry=>{
+      if(entry.trasladado || isDone(srcSec, entry)) return;
+      const base = parseInt(entry.detail,10) || 8;
+      const n = base + gap;
+      // mora860 solo avanza dentro de sí misma — nunca "baja" a mora17 (esa ya es
+      // persistente y no participa en este traslado día a día).
+      const newDetail = String(n);
+      toState.sections[srcKey].push({
+        name: entry.name, detail: newDetail, status: entry.status, comment: entry.comment,
+        statusTime: entry.statusTime||null,
+        statusDate: entry.statusDate||null,
+        evidence: null, trasladado:false, carriedFrom: fromDateStr,
+        originKey: entry.originKey||srcKey, originDate: entry.originDate||fromDateStr, tipo: entry.tipo||''
+      });
+      entry.trasladado = true;
+      moved++;
+    });
+    return {toState, moved};
+  }
+
+  // ---------- Aviso de confirmación (reutilizable) ----------
+  const carryModal = $('#carryModal');
+  function askConfirm(title, text){
+    return new Promise(resolve=>{
+      $('#carryModalTitle').textContent = title;
+      $('#carryModalText').textContent = text;
+      carryModal.classList.remove('hidden');
+      const onAccept = ()=>{ cleanup(); resolve(true); };
+      const onDecline = ()=>{ cleanup(); resolve(false); };
+      function cleanup(){
+        carryModal.classList.add('hidden');
+        $('#carryAccept').removeEventListener('click', onAccept);
+        $('#carryDecline').removeEventListener('click', onDecline);
+      }
+      $('#carryAccept').addEventListener('click', onAccept);
+      $('#carryDecline').addEventListener('click', onDecline);
+    });
+  }
+  function countPending(s){
+    let n=0;
+    const sec = SECTION_BY_KEY['mora860'];
+    s.sections.mora860.forEach(e=>{ if(!e.trasladado && !isDone(sec,e)) n++; });
+    return n;
+  }
+
+  async function runManualCarry(){
+    const fromDateStr = fechaInput.value;
+    const toDateStr = addDays(fromDateStr,1);
+    const pending = countPending(state);
+    if(pending===0){ toast('No hay pendientes por trasladar'); return; }
+    const accept = await askConfirm(
+      `¿Trasladar ${pending} cuenta(s)?`,
+      `Se moverán del ${fmtDate(fromDateStr)} al ${fmtDate(toDateStr)}, avanzando sus días de atraso. Verás la fecha ${fmtDate(toDateStr)} de inmediato para confirmar el resultado.`
+    );
+    if(!accept){ return; }
+    const {toState, moved} = await computeCarry(state, fromDateStr, toDateStr);
+    lsSet(storageKey(fromDateStr), JSON.stringify(state));
+    lsSet(storageKey(toDateStr), JSON.stringify(toState));
+    setLastActiveDate(toDateStr);
+    // Saltamos a la fecha destino para que se vea el resultado de inmediato,
+    // en vez de quedarnos en hoy viendo solo las tarjetas grises "trasladada".
+    fechaInput.value = toDateStr;
+    state = toState;
+    weekProspectos = loadWeekProspectos();
+    weekFichas = loadWeekFichas();
+    weekMora17 = loadWeekMora17();
+    weekZonas = loadWeekZonas();
+    migrateLegacyProspectos(toDateStr);
+    migrateLegacyFichas(toDateStr);
+    migrateLegacyMora17(toDateStr);
+    migrateLegacyZonas(toDateStr);
+    reconcileFichaStatuses();
+    toast(`${moved} cuenta(s) trasladada(s) — ahora viendo ${fmtDate(toDateStr)}`);
+    renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+  }
+  $('#btnCarry').addEventListener('click', runManualCarry);
+
+  // ---------- Aviso automático al abrir un día nuevo ----------
+  async function askCarry(fromDateStr, toDateStr, pending){
+    return askConfirm(
+      `Tienes ${pending} cuenta(s) del ${fmtDate(fromDateStr)}`,
+      `No se cerraron el ${fmtDate(fromDateStr)}. ¿Las traslado a hoy (${fmtDate(toDateStr)}), avanzando sus días de atraso?`
+    );
+  }
+  // Abre una fecha: si nunca se ha visitado y no es lunes (el lunes es captura manual
+  // completa a propósito), ofrece trasladar los pendientes del último día activo.
+  async function openDate(dateStr){
+    await openDateInner(dateStr);
+    weekProspectos = loadWeekProspectos();
+    weekFichas = loadWeekFichas();
+    weekMora17 = loadWeekMora17();
+    weekZonas = loadWeekZonas();
+    migrateLegacyProspectos(dateStr);
+    migrateLegacyFichas(dateStr);
+    migrateLegacyMora17(dateStr);
+    migrateLegacyZonas(dateStr);
+    reconcileFichaStatuses();
+    currentLoadedDate = dateStr;
+  }
+  // Blindaje: rescata cualquier Nuevo/Renovación/Lead Digital que haya quedado guardado
+  // dentro de algún día (formato viejo, antes de que Prospección viviera en un solo cajón
+  // persistente) y lo mueve ahí, dejando el día limpio (solo Zona debe vivir por día).
+  function migrateLegacyProspectos(dateStr){
+    let changed = false;
+    for(let i=0;i<14;i++){
+      const d = addDays(dateStr, -i);
+      if(d===dateStr){
+        const stray = state.sections.prospeccion.filter(e=>e.tipo && e.tipo!=='Zona');
+        if(stray.length){
+          weekProspectos.push(...stray);
+          state.sections.prospeccion = state.sections.prospeccion.filter(e=>!(e.tipo && e.tipo!=='Zona'));
+          changed = true;
+          saveState();
+        }
+        continue;
+      }
+      const raw = lsGet(storageKey(d));
+      if(!raw) continue;
+      let dayState;
+      try{ dayState = JSON.parse(raw); }catch(e){ continue; }
+      if(!dayState.sections || !dayState.sections.prospeccion) continue;
+      const stray = dayState.sections.prospeccion.filter(e=>e.tipo && e.tipo!=='Zona');
+      if(stray.length){
+        weekProspectos.push(...stray);
+        dayState.sections.prospeccion = dayState.sections.prospeccion.filter(e=>!(e.tipo && e.tipo!=='Zona'));
+        lsSet(storageKey(d), JSON.stringify(dayState));
+        changed = true;
+      }
+    }
+    if(changed) saveWeekProspectos();
+  }
+  // Mismo blindaje que arriba, pero para Fichas: rescata cualquier ficha que haya
+  // quedado guardada por día (formato anterior a "Fichas de la semana") y la mueve a
+  // la lista semanal, usando el día en que se capturó como su fecha de pago.
+  function migrateLegacyFichas(dateStr){
+    let changed = false;
+    for(let i=0;i<14;i++){
+      const d = addDays(dateStr, -i);
+      if(d===dateStr){
+        if(state.sections.fichas && state.sections.fichas.length){
+          const stray = state.sections.fichas;
+          stray.forEach(e=>{ if(!e.fechaPago) e.fechaPago = e.originDate || d; if(e.status==='hoyqueda') e.status='entiempo'; });
+          weekFichas.push(...stray);
+          state.sections.fichas = [];
+          changed = true;
+          saveState();
+        }
+        continue;
+      }
+      const raw = lsGet(storageKey(d));
+      if(!raw) continue;
+      let dayState;
+      try{ dayState = JSON.parse(raw); }catch(e){ continue; }
+      if(!dayState.sections || !dayState.sections.fichas || !dayState.sections.fichas.length) continue;
+      const stray = dayState.sections.fichas;
+      stray.forEach(e=>{ if(!e.fechaPago) e.fechaPago = e.originDate || d; if(e.status==='hoyqueda') e.status='entiempo'; });
+      weekFichas.push(...stray);
+      dayState.sections.fichas = [];
+      lsSet(storageKey(d), JSON.stringify(dayState));
+      changed = true;
+    }
+    if(changed) saveWeekFichas();
+  }
+  // Mora 1-7 ya se trasladaba día a día en el formato anterior, así que el estado de
+  // HOY ya trae consolidado lo más reciente de cada cuenta — no hace falta escarbar
+  // varios días atrás (eso sí generaría duplicados de la misma cuenta).
+  function migrateLegacyMora17(dateStr){
+    if(!state.sections.mora17 || !state.sections.mora17.length) return;
+    const stray = state.sections.mora17.filter(e=>!e.trasladado);
+    stray.forEach(e=>{
+      if(e.diasInicial==null){ e.diasInicial = parseInt(e.detail,10)||1; e.fechaCaptura = dateStr; }
+    });
+    if(stray.length){ weekMora17.push(...stray); saveWeekMora17(); }
+    state.sections.mora17 = [];
+    saveState();
+  }
+  // Blindaje: rescata cualquier Zona que haya quedado guardada por día (formato viejo,
+  // de antes de que Prospección y cambaceo viviera en un solo cajón persistente, igual
+  // que Fichas/Mora17) y la mueve a la lista semanal, dejando el día limpio. Corre
+  // DESPUÉS de migrateLegacyProspectos, que ya sacó de aquí lo que no era Zona.
+  function migrateLegacyZonas(dateStr){
+    let changed = false;
+    for(let i=0;i<14;i++){
+      const d = addDays(dateStr, -i);
+      if(d===dateStr){
+        if(state.sections.prospeccion && state.sections.prospeccion.length){
+          const stray = state.sections.prospeccion;
+          weekZonas.push(...stray);
+          state.sections.prospeccion = [];
+          changed = true;
+          saveState();
+        }
+        continue;
+      }
+      const raw = lsGet(storageKey(d));
+      if(!raw) continue;
+      let dayState;
+      try{ dayState = JSON.parse(raw); }catch(e){ continue; }
+      if(!dayState.sections || !dayState.sections.prospeccion || !dayState.sections.prospeccion.length) continue;
+      const stray = dayState.sections.prospeccion;
+      weekZonas.push(...stray);
+      dayState.sections.prospeccion = [];
+      lsSet(storageKey(d), JSON.stringify(dayState));
+      changed = true;
+    }
+    if(changed) saveWeekZonas();
+  }
+  async function openDateInner(dateStr){
+    if(hasStoredDate(dateStr)){
+      state = await loadState(dateStr);
+      return;
+    }
+    const lastActive = getLastActiveDate();
+    if(!lastActive || lastActive===dateStr){ state = emptyState(); return; }
+    const fromState = await loadState(lastActive);
+    const pending = countPending(fromState);
+    if(pending===0){ state = emptyState(); return; }
+    const accept = await askCarry(lastActive, dateStr, pending);
+    if(!accept){ state = emptyState(); return; }
+    const {toState, moved} = await computeCarry(fromState, lastActive, dateStr);
+    lsSet(storageKey(lastActive), JSON.stringify(fromState));
+    lsSet(storageKey(dateStr), JSON.stringify(toState));
+    setLastActiveDate(dateStr);
+    state = toState;
+    toast(`${moved} cuenta(s) trasladada(s) desde el ${fmtDate(lastActive)}`);
+  }
+
+  // ---------- Banners de pronóstico ----------
+  function renderBanners(){
+    const wrap = $('#bannersWrap');
+    let html = '';
+    const activeMora17 = weekMora17.filter(e=>e.status!=='pagado');
+    // Aviso del día: cuentas que HOY tienen exactamente 7 días — última oportunidad
+    // antes de que mañana brinquen (también) a Seguimiento 8-60.
+    const critical = activeMora17.filter(e=>computeMoraDiasActual(e)===7);
+    if(critical.length>0){
+      const names = critical.map(e=>e.name).slice(0,6).join(', ');
+      html += `<div class="banner banner-cross">
+        <div>
+          <b>${critical.length} cuenta(s) con 7 días — mañana brincan a Seguimiento 8-60 si no cierran hoy</b>
+          ${names}${critical.length>6?'…':''}
+        </div>
+      </div>`;
+    }
+    // Refuerzo un paso antes: cuentas en 6 días — todavía hay un día extra de margen.
+    const warning6 = activeMora17.filter(e=>computeMoraDiasActual(e)===6);
+    if(warning6.length>0){
+      const names = warning6.map(e=>e.name).slice(0,6).join(', ');
+      html += `<div class="banner banner-warning6">
+        <div>
+          <b>${warning6.length} cuenta(s) con 6 días — mañana llegan a 7, un día antes de saltar de cubeta</b>
+          ${names}${warning6.length>6?'…':''}
+        </div>
+      </div>`;
+    }
+    if(!isMonday(fechaInput.value)){
+      const nm = nextMonday(fechaInput.value);
+      const gap = dayGap(fechaInput.value, nm);
+      const atRisk = activeMora17.filter(e=>{
+        const dias = computeMoraDiasActual(e);
+        return dias<8 && (dias+gap)>=8;
+      });
+      if(atRisk.length>0){
+        const names = atRisk.map(e=>e.name).slice(0,6).join(', ');
+        html += `<div class="banner banner-forecast">
+          <div>
+            <b>Faltan ${gap} día(s) para el lunes ${fmtDate(nm)} — ${atRisk.length} cuenta(s) tendrán 8 días o más</b>
+            ${names}${atRisk.length>6?'…':''} — ciérralas antes si puedes.
+          </div>
+        </div>`;
+      }
+    }
+    wrap.innerHTML = html;
+  }
+
+  // ---------- Weekly reset ----------
+  function listStoredDates(){
+    const dates = [];
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      const m = k && k.match(/^agenda:(\d{4}-\d{2}-\d{2})$/);
+      if(m) dates.push(m[1]);
+    }
+    return dates.sort();
+  }
+  $('#btnResetWeek').addEventListener('click', async ()=>{
+    // Borra TODO lo guardado con fecha anterior a la que tienes abierta ahora mismo,
+    // Y ADEMÁS las listas semanales (Fichas, Mora de la semana pasada, Clientes a
+    // desembolsar) — estas últimas se limpian siempre que se confirme, sin importar
+    // si hay o no días viejos guardados (antes solo se limpiaban cuando sí los había,
+    // dejando "clientes fantasma" visibles si el asesor apenas empezaba a usar la app).
+    const cutoff = fechaInput.value;
+    const toDelete = listStoredDates().filter(d => d < cutoff);
+    const includesToday = hasStoredDate(cutoff);
+    const hasWeeklyData = weekFichas.length>0 || weekMora17.length>0 || weekProspectos.length>0 || weekZonas.length>0;
+    if(toDelete.length===0 && !includesToday && !hasWeeklyData){ toast('No hay nada guardado para borrar'); return; }
+    if(toDelete.length>0 || hasWeeklyData){
+      const rangeText = toDelete.length>0 ? ` (del ${fmtDate(toDelete[0])} al ${fmtDate(toDelete[toDelete.length-1])}, ${toDelete.length} día(s))` : '';
+      if(!confirm(`¿Borrar todo lo anterior a ${fmtDate(cutoff)}${rangeText}? Esto incluye las listas de Fichas de la semana, Mora de la semana pasada, Nuevo/Renovación/LNR/Lead Digital y Prospección y cambaceo (Zona).`)) return;
+      toDelete.forEach(d => lsDelete(storageKey(d)));
+      lsDelete(PROSPECTOS_KEY);
+      weekProspectos = [];
+      lsDelete(FICHAS_KEY);
+      weekFichas = [];
+      lsDelete(MORA17_KEY);
+      weekMora17 = [];
+      lsDelete(ZONAS_KEY);
+      weekZonas = [];
+    }
+    let wipedToday = false;
+    if(includesToday && confirm(`¿También quieres borrar la fecha que tienes abierta (${fmtDate(cutoff)}) para capturarla completa desde cero (seguimiento 8-60)?`)){
+      lsDelete(storageKey(cutoff));
+      const cfg = await loadConfig();
+      state = emptyState();
+      if(cfg){ state.asesor=cfg.asesor||''; state.sucursal=cfg.sucursal||''; }
+      asesorInput.value = state.asesor; sucursalInput.value = state.sucursal;
+      wipedToday = true;
+    }
+    renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+    toast(wipedToday ? `Todo borrado — captura ${fmtDate(cutoff)} desde cero` : `${toDelete.length} día(s) borrados (antes del ${fmtDate(cutoff)})`);
+  });
+
+  // ---------- Report ----------
+  function statusColor(sec, entry){
+    if(sec.type==='prospeccion'){
+      if(entry.tipo==='Zona') return {pendiente:'#5B6672',realizado:'#2F7A4D'}[entry.status];
+      return {pendiente:'#5B6672',contactado:'#2C4A72',analisis:'#8A5A00',desembolsado:'#2F7A4D',rechazado:'#B3261E'}[entry.status];
+    }
+    if(sec.type==='fichas') return {pagada:'#2F7A4D',entiempo:'#8A5A00',parcial:'#1E5FA8',complicada:'#B3261E'}[entry.status];
+    return {pendiente:'#5B6672',contactado:'#2C4A72',compromiso:'#8A5A00',parcial:'#1E5FA8',pagado:'#2F7A4D',nolocalizado:'#B3261E'}[entry.status];
+  }
+  function isHistoricalView(){ return fechaInput.value !== todayStr(); }
+  function entriesForReport(sec){
+    if(sec.key==='desembolso'){
+      if(isHistoricalView()){
+        // Clientes a desembolsar no es una foto por día — es una sola lista que vive
+        // toda la semana. Para auditar un día pasado, lo único confiable es filtrar por
+        // la fecha en que cada cliente se agregó por primera vez (no por su estatus
+        // actual, que puede haber cambiado después).
+        return weekProspectos.filter(e => e.originDate === fechaInput.value);
+      }
+      return weekProspectos.filter(e=>!e.trasladado);
+    }
+    if(sec.key==='fichas'){
+      // Fichas de la semana tampoco es una foto por día — vive quieta toda la semana.
+      // Para auditar un día pasado, mismo criterio que Desembolsos: filtrar por cuándo
+      // se agregó cada ficha, no por su estatus actual.
+      if(isHistoricalView()){
+        return weekFichas.filter(e => e.originDate === fechaInput.value);
+      }
+      return weekFichas;
+    }
+    if(sec.key==='mora17'){
+      if(isHistoricalView()){
+        return weekMora17.filter(e => e.originDate === fechaInput.value);
+      }
+      return weekMora17;
+    }
+    if(sec.key==='prospeccion'){
+      // Igual patrón que Fichas/Mora17/Desembolsos: es una sola lista que vive toda la
+      // semana, así que para auditar un día pasado se filtra por cuándo se agregó cada
+      // Zona, no por su estatus actual.
+      if(isHistoricalView()){
+        return weekZonas.filter(e => e.originDate === fechaInput.value);
+      }
+      return weekZonas;
+    }
+    if(sec.key==='mora860'){
+      // computeMoraDiasActual ya usa fechaInput.value como referencia, así que al ver
+      // un día pasado, reconstruye solo cuáles cuentas de mora17 ya habían cruzado los
+      // 8 días EN ESA FECHA — no hace falta ninguna lógica extra para esto.
+      const raw = state.sections.mora860;
+      const dayPart = isHistoricalView() ? raw : raw.filter(e=>!e.trasladado);
+      const mora17Part = weekMora17.filter(e => computeMoraDiasActual(e)>=8 && e.status!=='pagado');
+      return [...dayPart, ...mora17Part];
+    }
+    const raw = state.sections[sec.key];
+    return isHistoricalView() ? raw : raw.filter(e=>!e.trasladado);
+  }
+  const MIN_ZONAS_DIA = 2; // umbral para avisar que la agenda viene ligera en cambaceo
+  function computeDailyLoad(){
+    const cobranzaTotal = counts(state,'fichas').total + counts(state,'mora17').total + counts(state,'mora860').total;
+    const zonaCount = weekZonas.filter(e=>e.originDate===fechaInput.value).length;
+    const staleCount = weekProspectos.filter(e=>isStale(SECTION_BY_KEY['desembolso'], e)).length;
+    return { cobranzaTotal, zonaCount, staleCount, light: zonaCount < MIN_ZONAS_DIA };
+  }
+  function reportDetailText(sec, e){
+    if(sec.key==='fichas' && e.fechaPago) return fmtDate(e.fechaPago);
+    if(sec.key==='mora17' || e.diasInicial!=null) return `${computeMoraDiasActual(e)} días`;
+    return e.detail||'';
+  }
+  function renderReport(){
+    const {done,total} = overallCounts(state);
+    const secHTML = SECTIONS.map((sec,idx)=>{
+      const list = entriesForReport(sec);
+      const lines = list.length ? list.map(e=>{
+        const st = statusInfo(sec, e);
+        const evTag = evidenceTag(sec, e);
+        const staleTag = isStale(sec, e) ? staleDays(e) : 0;
+        const isNoPagadaFicha = sec.key==='fichas' && fichaBucket(e)==='nopagada';
+        const isParcialFicha = sec.key==='fichas' && fichaBucket(e)==='parcial';
+        const movedTag = e.trasladado ? ' <span style="color:#5B6672">(trasladada)</span>' : '';
+        const evLog = getEvidenceLog(e);
+        const latestEv = evLog.length ? evLog[evLog.length-1] : null;
+        const zline = sec.key==='prospeccion' ? zonaValidationLine(e) : null;
+        return `<div class="report-line">
+          ${latestEv && latestEv.photo ? `<img class="report-thumb" src="${latestEv.photo}" alt="evidencia" data-action="zoom">` : ''}
+          <span class="rn">${escapeHTML(e.name)}${movedTag}</span>
+          <span class="rd">${escapeHTML(reportDetailText(sec,e))}${e.tipo?(' · '+escapeHTML(e.tipo)):''}</span>
+          <span class="rs" style="color:${statusColor(sec,e)}">${st.l}</span>
+          ${evTag?`<span class="ev-tag" style="color:${evTag.ok?'#2F7A4D':'#B3261E'}">${evTag.text}</span>`:''}
+          ${evLog.length>1?`<span class="ev-tag" style="color:#5B6672">(${evLog.length} registros)</span>`:''}
+          ${staleTag?`<span class="ev-tag" style="color:#B3261E">⚠ ${staleTag}d sin actualizar</span>`:''}
+          ${isNoPagadaFicha?`<span class="ev-tag" style="color:#B3261E">⚠ no pagada</span>`:''}
+          ${isParcialFicha?`<span class="ev-tag" style="color:#1E5FA8">◐ pago parcial</span>`:''}
+          ${e.statusTime?`<span class="rd">${formatStatusStamp(e)}</span>`:''}
+          ${e.comment ? `<span class="rc">${escapeHTML(e.comment)}</span>` : ''}
+          ${latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a></span>` : ''}
+          ${latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)}</span>` : ''}
+          ${zline ? `<span class="rc" style="color:${zonaLevelColor(zline.level)};font-weight:700">${zonaLevelIcon(zline.level)} ${escapeHTML(zline.text)}</span>${zline.mapUrl?` <a class="rc" href="${zline.mapUrl}" target="_blank" rel="noopener">🗺️ ruta</a>`:''}` : ''}
+        </div>`;
+      }).join('') : `<div class="report-empty">Sin cuentas en este bloque.</div>`;
+      const c = { done: list.filter(e=>isDone(sec,e)).length, total: list.length };
+      const histNote = (sec.key==='desembolso' && isHistoricalView()) ? `<p class="hist-note">Nuevos capturados ese día — el estatus mostrado es el más reciente, no el que tenían ese día.</p>` : '';
+      const zonaSummaryHTML = (sec.key==='prospeccion' && !isHistoricalView()) ? (()=>{
+        const rows = computeZonaWeekSummary();
+        if(!rows.length) return '';
+        const rowsHTML = rows.map(r=>{
+          const parts = [];
+          if(r.elapsedMin!=null) parts.push(`${r.elapsedMin} min`);
+          if(r.dist!=null) parts.push(`${Math.round(r.dist)} m`);
+          return `<div class="report-line">
+            <span class="rn">${escapeHTML(r.name)}</span>
+            <span class="rd">${fmtDate(r.date)}</span>
+            <span class="rc" style="color:${zonaLevelColor(r.level)};font-weight:700">${zonaLevelIcon(r.level)} ${escapeHTML(parts.join(' · '))}</span>
+            ${r.mapUrl?`<a class="rc" href="${r.mapUrl}" target="_blank" rel="noopener">🗺️ Ver ruta</a>`:''}
+          </div>`;
+        }).join('');
+        return `<div class="report-sec">
+          <span class="report-sec-title" style="background:#EFEAF7;color:#6D4AA3">Resumen de cambaceo de la semana</span>
+          <p class="hist-note">Distancia en línea recta (no la ruta real caminada) — es una referencia, no un veredicto.</p>
+          ${rowsHTML}
+        </div>`;
+      })() : '';
+      return `<div class="report-sec">
+        <span class="report-sec-title r${idx+1}">${sec.idx} · ${sec.title} — ${c.done}/${c.total}</span>
+        ${histNote}
+        ${lines}
+      </div>
+      ${zonaSummaryHTML}`;
+    }).join('');
+    $('#reportCard').innerHTML = `
+      <div class="report-head">
+        <h2>Agenda del asesor — ${fmtDate(fechaInput.value)}${isHistoricalView()?' · Vista histórica':''}</h2>
+        <div class="meta">${escapeHTML(state.asesor||'Asesor sin nombre')} · ${escapeHTML(state.sucursal||'Sucursal sin definir')}</div>
+      </div>
+      ${(()=>{ const dl = computeDailyLoad(); const fs = computeFichaSemanaStats(); return `
+      <div class="load-box ${(dl.light||dl.staleCount)?'load-light':''}">
+        <b>Carga del día</b> — ${dl.cobranzaTotal} cuenta(s) en gestión (fichas + mora + seguimiento) · ${dl.zonaCount} zona(s) de cambaceo
+        ${dl.light?`<br>⚠ Agenda ligera en prospección — menos de ${MIN_ZONAS_DIA} zonas programadas hoy.`:''}
+        ${dl.staleCount?`<br>⚠ ${dl.staleCount} prospecto(s) sin actualizar hace ${STALE_THRESHOLD_DAYS}+ días.`:''}
+        <br><b>Fichas de la semana:</b> ${fs.acumuladas} acumuladas · ${fs.pagadas} cerradas · <b>${fs.pct}%</b>${fs.pendientes?` · ${fs.pendientes} pendiente(s)`:''}
+      </div>`; })()}
+      ${secHTML}
+      <div class="report-summary">
+        <div class="box"><div class="n">${done}/${total}</div><div class="l">Trabajadas</div></div>
+        <div class="box"><div class="n">${total-done}</div><div class="l">Pendientes</div></div>
+        <div class="box"><div class="n">${total?Math.round(done/total*100):0}%</div><div class="l">Avance</div></div>
+      </div>
+      <div class="report-summary">
+        <div class="box"><div class="n">${weeklyGoals.prospectos}/10</div><div class="l">Prospectos semana</div></div>
+        <div class="box"><div class="n">${weeklyGoals.desembolsosNuevos}/2</div><div class="l">Desembolsos nuevos</div></div>
+        <div class="box"><div class="n">${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}</div><div class="l">Renovaciones</div></div>
+      </div>`;
+  }
+  function toggleReport(show){
+    document.getElementById('app').classList.toggle('report-mode', show);
+    document.getElementById('reportView').classList.toggle('active', show);
+    if(show) renderReport();
+  }
+  $('#btnReport').addEventListener('click', ()=> toggleReport(true));
+  $('#btnBack').addEventListener('click', ()=> toggleReport(false));
+  let jsPDFLoadPromise = null;
+  function ensureJsPDF(){
+    if(window.jspdf) return Promise.resolve();
+    if(jsPDFLoadPromise) return jsPDFLoadPromise;
+    jsPDFLoadPromise = new Promise((resolve, reject)=>{
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = ()=> resolve();
+      s.onerror = ()=> { jsPDFLoadPromise = null; reject(new Error('No se pudo cargar la librería de PDF')); };
+      document.head.appendChild(s);
+    });
+    return jsPDFLoadPromise;
+  }
+  $('#btnPrint').addEventListener('click', async ()=>{
+    toast('Preparando PDF...');
+    try{
+      await ensureJsPDF();
+      downloadReportPDF();
+    }catch(e){
+      console.error(e);
+      toast('No se pudo generar el PDF — revisa tu conexión a internet e intenta de nuevo');
+    }
+  });
+  const PDF_LOGO_B64 = "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";
+  const PDF_SECTION_COLOR = {
+    fichas:[30,95,168], mora17:[201,122,43], desembolso:[31,111,92], prospeccion:[109,76,159], mora860:[179,38,30]
+  };
+  const PDF_SECTION_SOFT = {
+    fichas:[228,237,247], mora17:[251,240,226], desembolso:[231,241,238], prospeccion:[239,234,247], mora860:[251,234,233]
+  };
+  // jsPDF no trae arcos — se simula el anillo con muchas líneas cortas alrededor
+  // de un círculo, coloreando solo la porción que corresponde al %.
+  function drawArcPDF(doc, cx, cy, r, fromDeg, toDeg){
+    const steps = Math.max(2, Math.round(Math.abs(toDeg-fromDeg)/4));
+    let prevX, prevY;
+    for(let i=0;i<=steps;i++){
+      const deg = fromDeg + (toDeg-fromDeg)*(i/steps);
+      const rad = deg*Math.PI/180;
+      const x = cx + r*Math.cos(rad), y = cy + r*Math.sin(rad);
+      if(i>0) doc.line(prevX, prevY, x, y);
+      prevX=x; prevY=y;
+    }
+  }
+  function drawDonutPDF(doc, cx, cy, r, pct, colorRGB, lineWidth){
+    doc.setLineWidth(lineWidth);
+    doc.setDrawColor(218,221,214); // fondo gris, igual que en la app
+    drawArcPDF(doc, cx, cy, r, -90, 270);
+    if(pct>0){
+      doc.setDrawColor(colorRGB[0],colorRGB[1],colorRGB[2]);
+      drawArcPDF(doc, cx, cy, r, -90, -90+pct*3.6);
+    }
+    doc.setFont(undefined,'bold'); doc.setFontSize(r*0.55);
+    doc.setTextColor(colorRGB[0],colorRGB[1],colorRGB[2]);
+    doc.text(`${pct}%`, cx, cy, {align:'center', baseline:'middle'});
+    doc.setFont(undefined,'normal');
+  }
+  function downloadReportPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'letter'});
+    const marginL = 40, marginR = 40, pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+    let y = 40;
+    function checkBreak(h){ if(y+h > pageH-40){ doc.addPage(); y=40; } }
+    function wrapText(text, size, maxW){
+      doc.setFontSize(size);
+      return doc.splitTextToSize(text, maxW);
+    }
+    function pill(x, py, w, h, rgb, r){
+      doc.setFillColor(rgb[0],rgb[1],rgb[2]);
+      doc.roundedRect(x, py, w, h, r||6, r||6, 'F');
+    }
+
+    // ---------- Barra con logo ----------
+    const barH = 46;
+    pill(marginL, y, pageW-marginL-marginR, barH, [28,43,57], 8);
+    try{
+      const logoH = 26, logoW = logoH*(329/65);
+      doc.addImage('data:image/png;base64,'+PDF_LOGO_B64, 'PNG', marginL+(pageW-marginL-marginR-logoW)/2, y+(barH-logoH)/2, logoW, logoH);
+    }catch(err){ console.error(err); }
+    y += barH + 22;
+
+    // ---------- Título ----------
+    doc.setTextColor(28,43,57);
+    doc.setFont(undefined,'bold'); doc.setFontSize(15);
+    doc.text(`Agenda del asesor — ${fmtDate(fechaInput.value)}${isHistoricalView()?' · Vista histórica':''}`, marginL, y); y+=18;
+    doc.setFont(undefined,'normal'); doc.setFontSize(10.5); doc.setTextColor(90,100,110);
+    doc.text(`${state.asesor||'Asesor sin nombre'}  ·  ${state.sucursal||'Sucursal sin definir'}`, marginL, y); y+=10;
+    doc.setDrawColor(28,43,57); doc.setLineWidth(1.2);
+    y+=8; doc.line(marginL,y,pageW-marginR,y); y+=18;
+
+    // ---------- Carga del día (caja de color) ----------
+    const dl = computeDailyLoad();
+    const warn = dl.light || dl.staleCount;
+    doc.setFontSize(9.5);
+    let loadLine = `Carga del día — ${dl.cobranzaTotal} cuenta(s) en gestión (fichas + mora + seguimiento) · ${dl.zonaCount} zona(s) de cambaceo`;
+    if(dl.light) loadLine += `\n[!] Agenda ligera en prospección — menos de ${MIN_ZONAS_DIA} zonas programadas hoy.`;
+    if(dl.staleCount) loadLine += `\n[!] ${dl.staleCount} prospecto(s) sin actualizar hace ${STALE_THRESHOLD_DAYS}+ días.`;
+    const loadLines = loadLine.split('\n').flatMap(l => doc.splitTextToSize(l, pageW-marginL-marginR-20));
+    const boxH = loadLines.length*12 + 14;
+    checkBreak(boxH+10);
+    const boxColor = warn ? [251,234,233] : [255,255,255];
+    const boxBorder = warn ? [179,38,30] : [218,221,214];
+    doc.setFillColor(boxColor[0],boxColor[1],boxColor[2]);
+    doc.setDrawColor(boxBorder[0],boxBorder[1],boxBorder[2]); doc.setLineWidth(1);
+    doc.roundedRect(marginL, y, pageW-marginL-marginR, boxH, 6, 6, 'FD');
+    doc.setTextColor(warn?179:28, warn?38:43, warn?30:57);
+    let ly = y+16;
+    loadLines.forEach((l,idx)=>{ doc.setFont(undefined, idx===0?'bold':'normal'); doc.text(l, marginL+10, ly); ly+=12; });
+    y += boxH + 12;
+    doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
+
+    // ---------- Anillo de Fichas de la semana (igual que el encabezado en vivo) ----------
+    const fsPdf = computeFichaSemanaStats();
+    checkBreak(70);
+    doc.setFillColor(28,43,57);
+    doc.roundedRect(marginL, y, pageW-marginL-marginR, 60, 8, 8, 'F');
+    const heroColor = fsPdf.acumuladas ? (fsPdf.pct>=80?[47,122,77]:fsPdf.pct>=50?[201,122,43]:[179,38,30]) : [120,132,145];
+    drawDonutPDF(doc, marginL+34, y+30, 22, fsPdf.acumuladas?fsPdf.pct:0, heroColor, 6);
+    doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(13);
+    doc.text('Fichas de la semana', marginL+68, y+25);
+    doc.setFont(undefined,'normal'); doc.setFontSize(9.5); doc.setTextColor(202,220,252);
+    doc.text(`${fsPdf.acumuladas} acumuladas · ${fsPdf.pagadas} cerradas${fsPdf.pendientes?` · ${fsPdf.pendientes} pendiente(s)`:''}`, marginL+68, y+40);
+    y += 60 + 18;
+    doc.setTextColor(28,43,57); doc.setFont(undefined,'normal'); doc.setFontSize(10);
+
+    // ---------- Secciones ----------
+    const {done,total} = overallCounts(state);
+    SECTIONS.forEach(sec=>{
+      const list = entriesForReport(sec);
+      const c = { done: list.filter(e=>isDone(sec,e)).length, total: list.length };
+      const color = PDF_SECTION_COLOR[sec.key];
+      checkBreak(30);
+      pill(marginL, y, pageW-marginL-marginR, 22, color, 5);
+      doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(10.5);
+      doc.text(`${sec.idx}   ${sec.title.toUpperCase()} — ${c.done}/${c.total}`, marginL+10, y+15);
+      y += 22 + 10;
+      doc.setTextColor(28,43,57);
+      if(sec.key==='mora17'){
+        const m17 = computeMora17Stats();
+        checkBreak(46);
+        const softM = PDF_SECTION_SOFT.mora17, colorM = PDF_SECTION_COLOR.mora17;
+        doc.setFillColor(softM[0],softM[1],softM[2]);
+        doc.setDrawColor(colorM[0],colorM[1],colorM[2]); doc.setLineWidth(1);
+        doc.roundedRect(marginL, y, pageW-marginL-marginR, 38, 6, 6, 'FD');
+        drawDonutPDF(doc, marginL+24, y+19, 15, m17.total?m17.pct:0, colorM, 4);
+        doc.setFontSize(9.5); doc.setTextColor(28,43,57);
+        doc.text(`${m17.total} cuenta(s) capturadas · ${m17.pagadas} cerradas${m17.activas?` · ${m17.activas} activa(s)`:''}`, marginL+46, y+23);
+        y += 38 + 10;
+      }
+      if(sec.key==='desembolso' && isHistoricalView()){
+        doc.setFontSize(8.5); doc.setTextColor(90,100,110); doc.setFont(undefined,'italic');
+        doc.text('Nuevos capturados ese día — el estatus mostrado es el más reciente.', marginL, y); y+=12;
+        doc.setFont(undefined,'normal'); doc.setFontSize(10); doc.setTextColor(28,43,57);
+      }
+      if(!list.length){
+        checkBreak(14); doc.setTextColor(120,120,120); doc.setFontSize(10);
+        doc.text('Sin cuentas en este bloque.', marginL, y); y+=16; doc.setTextColor(28,43,57);
+      } else {
+        const soft = PDF_SECTION_SOFT[sec.key];
+        list.forEach(e=>{
+          const st = statusInfo(sec, e);
+          const evTag = evidenceTag(sec, e);
+          const tagStr = evTag ? `  [${evTag.text}]` : '';
+          const movedTag = e.trasladado ? '  (trasladada)' : '';
+          const timeTag = e.statusTime ? '  ·  '+formatStatusStamp(e) : '';
+          const noPagadaTag = (sec.key==='fichas' && fichaBucket(e)==='nopagada') ? '  [NO PAGADA]' : (sec.key==='fichas' && fichaBucket(e)==='parcial') ? '  [PAGO PARCIAL]' : '';
+          const detailTxt = reportDetailText(sec,e);
+          const line1 = `${e.name}${movedTag}${detailTxt?'  —  '+detailTxt:''}${e.tipo?'  ('+e.tipo+')':''}   [${st.l}]${tagStr}${noPagadaTag}${timeTag}`;
+          checkBreak(16);
+          // franja de color a la izquierda, como en pantalla
+          doc.setFillColor(soft[0],soft[1],soft[2]);
+          doc.rect(marginL, y-9, pageW-marginL-marginR, 15, 'F');
+          doc.setFillColor(color[0],color[1],color[2]);
+          doc.rect(marginL, y-9, 2.5, 15, 'F');
+          doc.setFontSize(10);
+          if(evTag){
+            const [r,g,b] = evTag.ok ? [47,122,77] : [179,38,30];
+            const parts = line1.split(tagStr);
+            doc.setTextColor(28,43,57);
+            doc.text(parts[0], marginL+8, y);
+            const w0 = doc.getTextWidth(parts[0]);
+            doc.setTextColor(r,g,b);
+            doc.text(tagStr, marginL+8+w0, y);
+            doc.setTextColor(28,43,57);
+            doc.text(parts[1]||'', marginL+8+w0+doc.getTextWidth(tagStr), y);
+          } else {
+            doc.text(line1, marginL+8, y);
+          }
+          y+=15;
+          const staleTag = isStale(sec, e) ? staleDays(e) : 0;
+          if(staleTag){
+            doc.setFontSize(9); doc.setTextColor(179,38,30);
+            checkBreak(11); doc.text(`[!] ${staleTag} día(s) sin actualizar`, marginL+16, y); y+=11;
+            doc.setFontSize(10); doc.setTextColor(28,43,57);
+          }
+          if(e.comment){
+            doc.setFontSize(9); doc.setTextColor(90,100,110);
+            const lines = wrapText(e.comment, 9, pageW-marginL-marginR-18);
+            lines.forEach(l=>{ checkBreak(11); doc.text(l, marginL+16, y); y+=11; });
+            doc.setFontSize(10); doc.setTextColor(28,43,57);
+          }
+          const evLogPdf = getEvidenceLog(e);
+          const latestEvPdf = evLogPdf.length ? evLogPdf[evLogPdf.length-1] : null;
+          if(evLogPdf.length>0){
+            doc.setFontSize(9); doc.setTextColor(90,100,110);
+            checkBreak(11);
+            const fotosCountPdf = evLogPdf.filter(v=>v.photo).length;
+            const coordsCountPdf = evLogPdf.filter(v=>v.lat!=null).length;
+            doc.text(`${evLogPdf.length} registro(s) · ${fotosCountPdf} foto(s) · ${coordsCountPdf} coordenada(s):`, marginL+16, y); y+=11;
+            evLogPdf.forEach(v=>{
+              checkBreak(11);
+              const phaseLabel = v.phase ? (v.phase==='inicio'?'Inicio':'Fin') + ' — ' : '';
+              const dLabel = `${phaseLabel}${v.date?fmtDate(v.date):'?'}${v.time?' '+v.time:''}`;
+              if(v.lat!=null){
+                doc.setTextColor(44,74,114);
+                doc.textWithLink(`  ${dLabel} — Ver en mapa (${v.lat.toFixed(5)}, ${v.lng.toFixed(5)})`, marginL+20, y, {url:`https://www.google.com/maps?q=${v.lat},${v.lng}`});
+              } else if(v.pastedCoords){
+                doc.setTextColor(90,100,110);
+                doc.text(`  ${dLabel} — Coordenadas: ${v.pastedCoords}`, marginL+20, y);
+              } else {
+                doc.setTextColor(179,38,30);
+                doc.text(`  ${dLabel} — sin coordenadas`, marginL+20, y);
+              }
+              y+=11;
+            });
+            doc.setFontSize(10); doc.setTextColor(28,43,57);
+          }
+          if(sec.key==='prospeccion'){
+            const zlinePdf = zonaValidationLine(e);
+            if(zlinePdf){
+              const rgbPdf = zlinePdf.level==='critical'?[179,38,30]:zlinePdf.level==='warn'?[138,90,0]:[47,122,77];
+              const iconPdf = zlinePdf.level==='critical'?'[!!]':zlinePdf.level==='warn'?'[!]':'[OK]';
+              doc.setFontSize(9);
+              doc.setTextColor(...rgbPdf);
+              checkBreak(11);
+              const zLines = wrapText(`${iconPdf} ${zlinePdf.text}`, 9, pageW-marginL-marginR-18);
+              zLines.forEach(l=>{ checkBreak(11); doc.text(l, marginL+16, y); y+=11; });
+              if(zlinePdf.mapUrl){
+                checkBreak(11);
+                doc.setTextColor(44,74,114);
+                doc.textWithLink('  Ver ruta inicio-fin en el mapa', marginL+16, y, {url: zlinePdf.mapUrl});
+                y += 11;
+              }
+              doc.setFontSize(10); doc.setTextColor(28,43,57);
+            }
+          }
+          if(latestEvPdf && latestEvPdf.photo){
+            checkBreak(40);
+            try{ doc.addImage(latestEvPdf.photo, 'JPEG', marginL+16, y, 32, 32); }catch(err){ console.error(err); }
+            y += 38;
+          }
+          y += 5;
+        });
+      }
+      if(sec.key==='prospeccion' && !isHistoricalView()){
+        const zRows = computeZonaWeekSummary();
+        if(zRows.length){
+          checkBreak(28);
+          pill(marginL, y, pageW-marginL-marginR, 20, [109,74,163], 5);
+          doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(9.5);
+          doc.text('RESUMEN DE CAMBACEO DE LA SEMANA', marginL+10, y+14);
+          y += 20 + 8;
+          doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
+          doc.setFontSize(8); doc.setFont(undefined,'italic'); doc.setTextColor(90,100,110);
+          checkBreak(10); doc.text('Distancia en línea recta — referencia, no veredicto.', marginL+10, y); y+=12;
+          doc.setFont(undefined,'normal'); doc.setFontSize(10); doc.setTextColor(28,43,57);
+          zRows.forEach(r=>{
+            checkBreak(11);
+            const parts = [];
+            if(r.elapsedMin!=null) parts.push(`${r.elapsedMin} min`);
+            if(r.dist!=null) parts.push(`${Math.round(r.dist)} m`);
+            const line = `${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}`;
+            const rgbRow = r.level==='critical'?[179,38,30]:r.level==='warn'?[138,90,0]:[47,122,77];
+            const iconRow = r.level==='critical'?'[!!]':r.level==='warn'?'[!]':'[OK]';
+            doc.setFontSize(9); doc.setTextColor(...rgbRow);
+            doc.text(`${iconRow} ${line}`, marginL+10, y); y+=11;
+            if(r.mapUrl){
+              checkBreak(11);
+              doc.setTextColor(44,74,114);
+              doc.textWithLink('     Ver ruta en el mapa', marginL+10, y, {url:r.mapUrl});
+              y+=11;
+            }
+            doc.setTextColor(28,43,57); doc.setFontSize(10);
+          });
+          y += 8;
+        }
+      }
+      y+=8;
+    });
+
+    // ---------- Resumen final (cajas) ----------
+    checkBreak(90);
+    doc.setDrawColor(28,43,57); doc.setLineWidth(1.2); doc.line(marginL,y,pageW-marginR,y); y+=20;
+    function statBoxes(items, yy){
+      const bw = (pageW-marginL-marginR-16)/3;
+      items.forEach((it,idx)=>{
+        const bx = marginL + idx*(bw+8);
+        doc.setDrawColor(218,221,214); doc.setLineWidth(0.8);
+        doc.roundedRect(bx, yy, bw, 40, 5, 5, 'S');
+        doc.setFont(undefined,'bold'); doc.setFontSize(14); doc.setTextColor(28,43,57);
+        doc.text(it.n, bx+bw/2, yy+20, {align:'center'});
+        doc.setFont(undefined,'normal'); doc.setFontSize(7.5); doc.setTextColor(90,100,110);
+        doc.text(it.l.toUpperCase(), bx+bw/2, yy+32, {align:'center'});
+      });
+    }
+    statBoxes([
+      {n:`${done}/${total}`, l:'Trabajadas'},
+      {n:`${total-done}`, l:'Pendientes'},
+      {n:`${total?Math.round(done/total*100):0}%`, l:'Avance'},
+    ], y);
+    y += 50;
+    checkBreak(50);
+    statBoxes([
+      {n:`${weeklyGoals.prospectos}/10`, l:'Prospectos semana'},
+      {n:`${weeklyGoals.desembolsosNuevos}/2`, l:'Desembolsos nuevos'},
+      {n:`${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}`, l:'Renovaciones'},
+    ], y);
+
+    const [yy,mm,dd] = fechaInput.value.split('-');
+    const nombre = (state.asesor||'Asesor').trim().replace(/[\\/:*?"<>|]/g,'');
+    doc.save(`AD ${nombre} ${dd}${mm}.pdf`);
+  }
+
+  function buildTextSummary(){
+    const {done,total} = overallCounts(state);
+    const emo = {pendiente:'⚪',contactado:'🔵',compromiso:'🟡',parcial:'🔵',pagado:'🟢',nolocalizado:'🔴',analisis:'🟡',desembolsado:'🟢',rechazado:'🔴',pagada:'🟢',entiempo:'🟡',complicada:'🔴',realizado:'🟢'};
+    const dl = computeDailyLoad();
+    let out = `*Agenda del asesor — ${fmtDate(fechaInput.value)}${isHistoricalView()?' · Vista histórica':''}*\n${state.asesor||'Asesor'} · ${state.sucursal||'Sucursal'}\n\n`;
+    out += `_Carga del día: ${dl.cobranzaTotal} cuenta(s) en gestión · ${dl.zonaCount} zona(s) de cambaceo${dl.light?` ⚠ agenda ligera en prospección`:''}${dl.staleCount?` ⚠ ${dl.staleCount} prospecto(s) sin actualizar ${STALE_THRESHOLD_DAYS}+ días`:''}_\n`;
+    const fsWa = computeFichaSemanaStats();
+    out += `_Fichas de la semana: ${fsWa.acumuladas} acumuladas · ${fsWa.pagadas} cerradas · ${fsWa.pct}%${fsWa.pendientes?` · ${fsWa.pendientes} pendiente(s)`:''}_\n\n`;
+    SECTIONS.forEach(sec=>{
+      const list = entriesForReport(sec);
+      const c = { done: list.filter(e=>isDone(sec,e)).length, total: list.length };
+      out += `*${sec.idx} ${sec.title}* (${c.done}/${c.total})\n`;
+      if(sec.key==='desembolso' && isHistoricalView()) out += `_(nuevos capturados ese día; el estatus es el más reciente)_\n`;
+      if(!list.length) out += `— sin cuentas capturadas —\n`;
+      list.forEach(e=>{
+        const st = statusInfo(sec, e);
+        const evTag = evidenceTag(sec, e);
+        const tagStr = evTag ? ` [${evTag.text}]` : '';
+        const movedTag = e.trasladado ? ' (trasladada)' : '';
+        const timeTag = e.statusTime ? ' · '+formatStatusStamp(e) : '';
+        const noPagadaTag = (sec.key==='fichas' && fichaBucket(e)==='nopagada') ? ' [NO PAGADA]' : (sec.key==='fichas' && fichaBucket(e)==='parcial') ? ' [PAGO PARCIAL]' : '';
+        out += `${emo[e.status]} ${e.name}${movedTag}${reportDetailText(sec,e)?' — '+reportDetailText(sec,e):''}${e.tipo?' ('+e.tipo+')':''} [${st.l}]${tagStr}${noPagadaTag}${timeTag}`;
+        const staleTag = isStale(sec, e) ? staleDays(e) : 0;
+        if(staleTag) out += `\n   ⚠ ${staleTag} día(s) sin actualizar`;
+        if(e.comment) out += `\n   ${e.comment}`;
+        const evLogWa = getEvidenceLog(e);
+        const latestEvWa = evLogWa.length ? evLogWa[evLogWa.length-1] : null;
+        if(evLogWa.length>1) out += `\n   (${evLogWa.length} registros: ${evLogWa.map(v=>`${fmtDate(v.date)}${v.phase?' '+v.phase:''}`).join(', ')})`;
+        if(latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng}`;
+        else if(latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords}`;
+        if(sec.key==='prospeccion'){
+          const zlineWa = zonaValidationLine(e);
+          if(zlineWa) out += `\n   ${zonaLevelIcon(zlineWa.level)} ${zlineWa.text}${zlineWa.mapUrl?`\n   🗺️ ${zlineWa.mapUrl}`:''}`;
+        }
+        out += `\n`;
+      });
+      if(sec.key==='prospeccion' && !isHistoricalView()){
+        const zRowsWa = computeZonaWeekSummary();
+        if(zRowsWa.length){
+          out += `_Resumen de cambaceo de la semana (distancia en línea recta — referencia, no veredicto):_\n`;
+          zRowsWa.forEach(r=>{
+            const parts = [];
+            if(r.elapsedMin!=null) parts.push(`${r.elapsedMin} min`);
+            if(r.dist!=null) parts.push(`${Math.round(r.dist)} m`);
+            out += `${zonaLevelIcon(r.level)} ${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}\n`;
+            if(r.mapUrl) out += `   🗺️ ${r.mapUrl}\n`;
+          });
+        }
+      }
+      out += `\n`;
+    });
+    out += `*Total del día: ${done}/${total} trabajadas (${total?Math.round(done/total*100):0}%)*\n`;
+    out += `*Semana — Prospectos: ${weeklyGoals.prospectos}/10 · Desembolsos nuevos: ${weeklyGoals.desembolsosNuevos}/2 · Renovaciones: ${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}*`;
+    return out;
+  }
+  function copyTextFallback(text){
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+  $('#btnCopy').addEventListener('click', async ()=>{
+    const text = buildTextSummary();
+    try{
+      if(navigator.clipboard && window.isSecureContext){
+        await navigator.clipboard.writeText(text);
+        toast('Resumen copiado — listo para WhatsApp');
+        return;
+      }
+      throw new Error('clipboard API no disponible en este contexto');
+    }catch(e){
+      const ok = copyTextFallback(text);
+      toast(ok ? 'Resumen copiado — listo para WhatsApp' : 'No se pudo copiar — mantén presionado el texto para seleccionarlo manualmente');
+    }
+  });
+
+  $('#helpToggle').addEventListener('click', ()=>{
+    $('#helpBody').classList.toggle('hidden');
+    $('#helpChev').classList.toggle('collapsed');
+  });
+  $('#weeklyToggle').addEventListener('click', ()=>{
+    $('#weeklyBody').classList.toggle('hidden');
+    $('#weeklyChev').classList.toggle('collapsed');
+  });
+
+  // ---------- Lightbox (ver foto ampliada dentro de la página) ----------
+  const lightbox = $('#photoLightbox');
+  document.body.addEventListener('click', (ev)=>{
+    const img = ev.target.closest('[data-action="zoom"]');
+    if(img){
+      $('#lightboxImg').src = img.src;
+      lightbox.classList.remove('hidden');
+    }
+  });
+  $('#lightboxClose').addEventListener('click', ()=> lightbox.classList.add('hidden'));
+  lightbox.addEventListener('click', (ev)=>{ if(ev.target===lightbox) lightbox.classList.add('hidden'); });
+
+  // ---------- Sucursal/Asesor: se capturan una sola vez y casi nunca se vuelven a
+  // tocar — por default se muestran como texto fijo con un botón "editar", en vez
+  // de ocupar un formulario abierto todo el tiempo. ----------
+  function refreshCfgDisplay(){
+    const sTxt = $('#cfgSucursalTxt'), aTxt = $('#cfgAsesorTxt');
+    sTxt.textContent = sucursalInput.value || 'Sin sucursal';
+    sTxt.classList.toggle('empty', !sucursalInput.value);
+    aTxt.textContent = asesorInput.value || 'Sin asesor';
+    aTxt.classList.toggle('empty', !asesorInput.value);
+  }
+  function setCfgEditing(open){
+    $('#cfgEditRow').classList.toggle('hidden', !open);
+    $('#cfgDisplay').classList.toggle('hidden', open);
+    $('#cfgEditBtn').textContent = open ? 'listo' : 'editar';
+  }
+  let cfgEditing = false;
+  $('#cfgEditBtn').addEventListener('click', ()=>{
+    cfgEditing = !cfgEditing;
+    setCfgEditing(cfgEditing);
+    if(cfgEditing) sucursalInput.focus();
+  });
+
+  // ---------- Init / date switching ----------
+  asesorInput.addEventListener('input', ()=>{ state.asesor = asesorInput.value; saveState(); saveConfig(); refreshCfgDisplay(); });
+  sucursalInput.addEventListener('change', ()=>{ state.sucursal = sucursalInput.value; saveState(); saveConfig(); refreshCfgDisplay(); });
+  let dateChangeBusy = false;
+  fechaInput.addEventListener('change', async ()=>{
+    if(dateChangeBusy){ return; }
+    dateChangeBusy = true;
+    fechaInput.disabled = true;
+    try{
+      flushSave();
+      await openDate(fechaInput.value);
+      const cfg = await loadConfig();
+      if(cfg){ state.asesor = state.asesor || cfg.asesor; state.sucursal = state.sucursal || cfg.sucursal; }
+      asesorInput.value = state.asesor||''; sucursalInput.value = state.sucursal||'';
+      refreshCfgDisplay();
+      renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+    } finally {
+      dateChangeBusy = false;
+      fechaInput.disabled = false;
+    }
+  });
+
+  async function init(){
+    const cfg = await loadConfig();
+    await openDate(fechaInput.value);
+    if(cfg){ state.asesor = state.asesor || cfg.asesor || ''; state.sucursal = state.sucursal || cfg.sucursal || ''; }
+    asesorInput.value = state.asesor||''; sucursalInput.value = state.sucursal||'';
+    refreshCfgDisplay();
+    // Primera vez (sin nada capturado todavía): arranca abierto para que puedan llenarlo.
+    cfgEditing = !(sucursalInput.value || asesorInput.value);
+    setCfgEditing(cfgEditing);
+    renderSections(); renderOverall(); renderBanners(); await refreshWeekly();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
