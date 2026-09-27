@@ -247,6 +247,19 @@
   .modal-actions{display:flex;gap:8px;}
   .modal-actions .btn{flex:1;padding:10px;}
 
+  .approvals-card{background:var(--p3-soft);border:1px solid var(--p3);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;}
+  .approvals-row1{display:flex;align-items:center;margin-bottom:8px;}
+  .approvals-title{font-size:13px;font-weight:700;color:var(--p3);}
+  .approvals-row2{display:flex;align-items:center;gap:8px;}
+  .approvals-count{display:flex;align-items:baseline;gap:2px;font-weight:700;font-size:22px;color:var(--ink);flex:1;}
+  .approvals-slash{color:var(--muted);font-weight:500;font-size:16px;margin:0 2px;}
+  .approvals-count input{width:52px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:16px;font-weight:700;font-family:inherit;color:var(--ink);background:var(--surface);}
+  .approvals-minus{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;}
+  .approvals-plus{background:var(--p3);color:#fff;font-weight:700;padding:10px 16px;}
+  .approvals-bar-track{background:#fff;border-radius:99px;height:8px;overflow:hidden;margin-top:10px;}
+  .approvals-bar-fill{background:var(--p3);height:100%;border-radius:99px;transition:width .3s ease;}
+  .approvals-pct{font-size:11px;color:var(--muted);margin-top:4px;text-align:right;}
+
   .banner{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;display:flex;align-items:flex-start;gap:8px;}
   .banner-cross{background:var(--danger-soft);color:var(--danger);}
   .banner-warning6{background:var(--p2-soft);color:var(--p2);}
@@ -281,6 +294,19 @@
 
   <div class="masthead"><h1>Agenda Diaria del Asesor</h1><input type="date" id="fecha" class="masthead-date"></div>
   <p class="sub">Gestión a distancia — orden de prioridad acordado con gerencia</p>
+
+  <div class="approvals-card" id="approvalsCard">
+    <div class="approvals-row1">
+      <span class="approvals-title">📈 Approvals de la semana</span>
+    </div>
+    <div class="approvals-row2">
+      <div class="approvals-count"><span id="approvalsCountTxt">0</span><span class="approvals-slash">/</span><input type="number" id="approvalsGoalInput" min="1" step="1" inputmode="numeric"></div>
+      <button class="approvals-minus" id="btnApprovalMinus" title="Corregir (−1)">−1</button>
+      <button class="btn approvals-plus" id="btnApprovalPlus">+1 Approval</button>
+    </div>
+    <div class="approvals-bar-track"><div class="approvals-bar-fill" id="approvalsBarFill"></div></div>
+    <div class="approvals-pct" id="approvalsPct"></div>
+  </div>
 
   <div class="help-wrap editor">
     <div class="help-toggle" id="helpToggle">❓ Cómo usar esta agenda <span class="chev collapsed" id="helpChev">▾</span></div>
@@ -398,7 +424,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.9.2 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.0 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -706,6 +732,12 @@
   // anteriores", exactamente como Fichas/Mora17/Desembolsos.
   let weekZonas = [];
   const ZONAS_KEY = 'agenda:zonas:semana';
+  // Approvals de la semana: meta la captura el propio asesor (10 es lo típico, pero
+  // los que no tienen cartera propia pueden necesitar 20 o lo que hayan acordado con
+  // su gerente) y el conteo se suma manualmente con el botón +1. Se reinicia el conteo
+  // (no la meta) con "Borrar días anteriores", igual que las demás listas semanales.
+  let weekApprovals = {goal:10, count:0};
+  const APPROVALS_KEY = 'agenda:approvals:semana';
   // Recuerda qué bloques (01-05) dejaste cerrados, para que no se vuelvan a abrir
   // solos cada vez que la pantalla se reconstruye por otro cambio.
   let collapsedSections = { fichas:true, mora17:true, desembolso:true, prospeccion:true, mora860:true };
@@ -741,6 +773,24 @@
   }
   function saveWeekZonas(){
     lsSet(ZONAS_KEY, JSON.stringify(weekZonas));
+  }
+  function loadWeekApprovals(){
+    const raw = lsGet(APPROVALS_KEY);
+    if(raw){ try{ const v = JSON.parse(raw); return {goal: v.goal>0?v.goal:10, count: v.count>=0?v.count:0}; }catch(e){} }
+    return {goal:10, count:0};
+  }
+  function saveWeekApprovals(){
+    lsSet(APPROVALS_KEY, JSON.stringify(weekApprovals));
+  }
+  function renderApprovals(){
+    const goalInput = $('#approvalsGoalInput');
+    if(!goalInput) return;
+    $('#approvalsCountTxt').textContent = weekApprovals.count;
+    if(document.activeElement !== goalInput){ goalInput.value = weekApprovals.goal; }
+    const pct = weekApprovals.goal>0 ? Math.round(weekApprovals.count/weekApprovals.goal*100) : 0;
+    $('#approvalsBarFill').style.width = Math.min(100,pct)+'%';
+    $('#approvalsPct').textContent = pct>=100 ? `¡Meta cumplida! (${pct}%)` : `${pct}% de la meta`;
+    $('#btnApprovalMinus').disabled = weekApprovals.count<=0;
   }
   // Los días de atraso NO se guardan fijos — se calculan cada vez comparando la fecha
   // en que se capturó la cuenta contra hoy, sumados a los días que ya traía en ese momento.
@@ -1933,11 +1983,11 @@
     const cutoff = fechaInput.value;
     const toDelete = listStoredDates().filter(d => d < cutoff);
     const includesToday = hasStoredDate(cutoff);
-    const hasWeeklyData = weekFichas.length>0 || weekMora17.length>0 || weekProspectos.length>0 || weekZonas.length>0;
+    const hasWeeklyData = weekFichas.length>0 || weekMora17.length>0 || weekProspectos.length>0 || weekZonas.length>0 || weekApprovals.count>0;
     if(toDelete.length===0 && !includesToday && !hasWeeklyData){ toast('No hay nada guardado para borrar'); return; }
     if(toDelete.length>0 || hasWeeklyData){
       const rangeText = toDelete.length>0 ? ` (del ${fmtDate(toDelete[0])} al ${fmtDate(toDelete[toDelete.length-1])}, ${toDelete.length} día(s))` : '';
-      if(!confirm(`¿Borrar todo lo anterior a ${fmtDate(cutoff)}${rangeText}? Esto incluye las listas de Fichas de la semana, Mora de la semana pasada, Nuevo/Renovación/LNR/Lead Digital y Prospección y cambaceo (Zona).`)) return;
+      if(!confirm(`¿Borrar todo lo anterior a ${fmtDate(cutoff)}${rangeText}? Esto incluye las listas de Fichas de la semana, Mora de la semana pasada, Nuevo/Renovación/LNR/Lead Digital, Prospección y cambaceo (Zona) y reinicia el conteo de Approvals de la semana (la meta se conserva).`)) return;
       toDelete.forEach(d => lsDelete(storageKey(d)));
       lsDelete(PROSPECTOS_KEY);
       weekProspectos = [];
@@ -1947,6 +1997,10 @@
       weekMora17 = [];
       lsDelete(ZONAS_KEY);
       weekZonas = [];
+      // La meta de Approvals se queda igual (es casi siempre la misma cada semana) —
+      // solo se reinicia el conteo, para empezar la nueva semana desde 0.
+      weekApprovals.count = 0;
+      saveWeekApprovals();
     }
     let wipedToday = false;
     if(includesToday && confirm(`¿También quieres borrar la fecha que tienes abierta (${fmtDate(cutoff)}) para capturarla completa desde cero (seguimiento 8-60)?`)){
@@ -1959,7 +2013,7 @@
       syncSucursalSelectFromValue();
       wipedToday = true;
     }
-    renderSections(); renderOverall(); renderBanners(); refreshWeekly();
+    renderSections(); renderOverall(); renderBanners(); renderApprovals(); refreshWeekly();
     toast(wipedToday ? `Todo borrado — captura ${fmtDate(cutoff)} desde cero` : `${toDelete.length} día(s) borrados (antes del ${fmtDate(cutoff)})`);
   });
 
@@ -2115,6 +2169,9 @@
         <div class="box"><div class="n">${weeklyGoals.prospectos}/10</div><div class="l">Prospectos semana</div></div>
         <div class="box"><div class="n">${weeklyGoals.desembolsosNuevos}/2</div><div class="l">Desembolsos nuevos</div></div>
         <div class="box"><div class="n">${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}</div><div class="l">Renovaciones</div></div>
+      </div>
+      <div class="report-summary">
+        <div class="box"><div class="n">${weekApprovals.count}/${weekApprovals.goal}</div><div class="l">Approvals semana</div></div>
       </div>`;
   }
   function toggleReport(show){
@@ -2442,6 +2499,11 @@
       {n:`${weeklyGoals.desembolsosNuevos}/2`, l:'Desembolsos nuevos'},
       {n:`${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}`, l:'Renovaciones'},
     ], y);
+    y += 50;
+    checkBreak(50);
+    statBoxes([
+      {n:`${weekApprovals.count}/${weekApprovals.goal}`, l:'Approvals semana'},
+    ], y);
 
     const [yy,mm,dd] = fechaInput.value.split('-');
     const nombre = (state.asesor||'Asesor').trim().replace(/[\\/:*?"<>|]/g,'');
@@ -2500,7 +2562,8 @@
       out += `\n`;
     });
     out += `*Total del día: ${done}/${total} trabajadas (${total?Math.round(done/total*100):0}%)*\n`;
-    out += `*Semana — Prospectos: ${weeklyGoals.prospectos}/10 · Desembolsos nuevos: ${weeklyGoals.desembolsosNuevos}/2 · Renovaciones: ${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}*`;
+    out += `*Semana — Prospectos: ${weeklyGoals.prospectos}/10 · Desembolsos nuevos: ${weeklyGoals.desembolsosNuevos}/2 · Renovaciones: ${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}*\n`;
+    out += `*Approvals de la semana: ${weekApprovals.count}/${weekApprovals.goal}*`;
     return out;
   }
   function copyTextFallback(text){
@@ -2615,6 +2678,26 @@
     state.sucursal = sucursalInput.value;
     saveState(); saveConfig(); refreshCfgDisplay();
   });
+  $('#btnApprovalPlus').addEventListener('click', ()=>{
+    weekApprovals.count++;
+    saveWeekApprovals(); renderApprovals();
+    toast(`+1 approval — ${weekApprovals.count}/${weekApprovals.goal}`);
+  });
+  $('#btnApprovalMinus').addEventListener('click', ()=>{
+    if(weekApprovals.count<=0) return;
+    weekApprovals.count--;
+    saveWeekApprovals(); renderApprovals();
+  });
+  $('#approvalsGoalInput').addEventListener('input', ()=>{
+    const v = parseInt($('#approvalsGoalInput').value, 10);
+    weekApprovals.goal = (v>0) ? v : 1;
+    saveWeekApprovals();
+    // No renderApprovals() aquí — resetearía el input al valor limpio mientras el
+    // usuario todavía está escribiendo (ej. borrando el "10" para poner "20" pasaría
+    // por un estado intermedio vacío/"2" que se vería reseteado a cada tecla).
+    $('#approvalsBarFill').style.width = Math.min(100, weekApprovals.goal>0?Math.round(weekApprovals.count/weekApprovals.goal*100):0)+'%';
+  });
+  $('#approvalsGoalInput').addEventListener('change', ()=>{ renderApprovals(); });
   let dateChangeBusy = false;
   fechaInput.addEventListener('change', async ()=>{
     if(dateChangeBusy){ return; }
@@ -2645,6 +2728,8 @@
     // Primera vez (sin nada capturado todavía): arranca abierto para que puedan llenarlo.
     cfgEditing = !(sucursalInput.value || asesorInput.value);
     setCfgEditing(cfgEditing);
+    weekApprovals = loadWeekApprovals();
+    renderApprovals();
     renderSections(); renderOverall(); renderBanners(); await refreshWeekly();
   }
   init();
