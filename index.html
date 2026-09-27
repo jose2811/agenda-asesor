@@ -425,7 +425,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.11.0 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.11.1 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -2298,6 +2298,30 @@
     loadLines.forEach((l,idx)=>{ doc.setFont(undefined, idx===0?'bold':'normal'); doc.text(l, marginL+10, ly); ly+=12; });
     y += boxH + 12;
     doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
+
+    // ---------- Approvals de la semana (mismo lugar y peso visual que en la app —
+    // arriba de la dona de Fichas, en verde sólido) ----------
+    checkBreak(64);
+    doc.setFillColor(31,111,92);
+    doc.roundedRect(marginL, y, pageW-marginL-marginR, 54, 8, 8, 'F');
+    doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(12);
+    doc.text('Approvals de la semana', marginL+14, y+20);
+    doc.setFontSize(19);
+    doc.text(`${weekApprovals.count}/${weekApprovals.goal}`, marginL+14, y+42);
+    {
+      const barX = marginL+130, barW = (pageW-marginR)-barX-10, barY = y+34, barH = 7;
+      doc.setFillColor(58,140,120);
+      doc.roundedRect(barX, barY, barW, barH, 3.5, 3.5, 'F');
+      const pct = weekApprovals.goal>0 ? Math.max(0,Math.min(1, weekApprovals.count/weekApprovals.goal)) : 0;
+      if(pct>0){
+        doc.setFillColor(255,255,255);
+        doc.roundedRect(barX, barY, Math.max(barH, barW*pct), barH, 3.5, 3.5, 'F');
+      }
+      doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(220,240,235);
+      doc.text(`${Math.round(pct*100)}% de la meta`, barX+barW, y+22, {align:'right'});
+    }
+    y += 54 + 14;
+    doc.setTextColor(28,43,57); doc.setFont(undefined,'normal'); doc.setFontSize(10);
 
     // ---------- Anillo de Fichas de la semana (igual que el encabezado en vivo) ----------
     const fsPdf = computeFichaSemanaStats();
