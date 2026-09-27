@@ -425,7 +425,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.11.1 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.11.2 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -2196,19 +2196,17 @@
     return jsPDFLoadPromise;
   }
   $('#btnPrint').addEventListener('click', async ()=>{
-    // La pestaña de vista previa se abre YA, dentro del mismo click — si se espera a que
-    // termine de generarse el PDF (que es async) para recién abrirla, la mayoría de los
-    // navegadores la bloquean por no verla como resultado directo de un toque del usuario.
-    // Aquí se abre en blanco de inmediato y, cuando el PDF esté listo, se le manda la URL.
-    let previewTab = null;
-    try{ previewTab = window.open('', '_blank'); }catch(e){}
+    // Vuelta a descarga directa (sin vista previa en pestaña) — dentro del navegador
+    // embebido de WhatsApp la vista previa rompía más de lo que ayudaba: el enlace
+    // "blob:" no se puede compartir ni reabrir fuera de esa pestaña, los links de
+    // ubicación se abrían raro, y el botón de compartir mandaba el enlace en vez del
+    // archivo. Descargar directo sí se puede reenviar por WhatsApp sin problema.
     toast('Preparando PDF...');
     try{
       await ensureJsPDF();
-      downloadReportPDF(previewTab);
+      downloadReportPDF();
     }catch(e){
       console.error(e);
-      if(previewTab && !previewTab.closed) previewTab.close();
       toast('No se pudo generar el PDF — revisa tu conexión a internet e intenta de nuevo');
     }
   });
@@ -2245,7 +2243,7 @@
     doc.text(`${pct}%`, cx, cy, {align:'center', baseline:'middle'});
     doc.setFont(undefined,'normal');
   }
-  function downloadReportPDF(previewTab){
+  function downloadReportPDF(){
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({unit:'pt', format:'letter'});
     const marginL = 40, marginR = 40, pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
@@ -2535,19 +2533,7 @@
 
     const [yy,mm,dd] = fechaInput.value.split('-');
     const nombre = (state.asesor||'Asesor').trim().replace(/[\\/:*?"<>|]/g,'');
-    const filename = `AD ${nombre} ${dd}${mm}.pdf`;
-    // Vista previa en pestaña nueva (usa el visor de PDF propio del navegador) — si el
-    // navegador bloqueó la pestaña (o es un navegador embebido, ej. dentro de WhatsApp,
-    // que no soporta abrir pestañas nuevas), se cae al comportamiento de siempre: descarga
-    // directa, sin vista previa.
-    if(previewTab && !previewTab.closed){
-      const blob = doc.output('blob');
-      const url = URL.createObjectURL(blob);
-      previewTab.location.href = url;
-      toast('PDF listo — se abrió en una pestaña nueva');
-    } else {
-      doc.save(filename);
-    }
+    doc.save(`AD ${nombre} ${dd}${mm}.pdf`);
   }
 
   function buildTextSummary(){
