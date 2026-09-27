@@ -295,19 +295,6 @@
   <div class="masthead"><h1>Agenda Diaria del Asesor</h1><input type="date" id="fecha" class="masthead-date"></div>
   <p class="sub">Gestión a distancia — orden de prioridad acordado con gerencia</p>
 
-  <div class="approvals-card" id="approvalsCard">
-    <div class="approvals-row1">
-      <span class="approvals-title">📈 Approvals de la semana</span>
-    </div>
-    <div class="approvals-row2">
-      <div class="approvals-count"><span id="approvalsCountTxt">0</span><span class="approvals-slash">/</span><input type="number" id="approvalsGoalInput" min="1" step="1" inputmode="numeric"></div>
-      <button class="approvals-minus" id="btnApprovalMinus" title="Corregir (−1)">−1</button>
-      <button class="btn approvals-plus" id="btnApprovalPlus">+1 Approval</button>
-    </div>
-    <div class="approvals-bar-track"><div class="approvals-bar-fill" id="approvalsBarFill"></div></div>
-    <div class="approvals-pct" id="approvalsPct"></div>
-  </div>
-
   <div class="help-wrap editor">
     <div class="help-toggle" id="helpToggle">❓ Cómo usar esta agenda <span class="chev collapsed" id="helpChev">▾</span></div>
     <div class="help-body hidden" id="helpBody">
@@ -393,6 +380,19 @@
     </div>
   </div>
 
+  <div class="approvals-card" id="approvalsCard">
+    <div class="approvals-row1">
+      <span class="approvals-title">📈 Approvals de la semana</span>
+    </div>
+    <div class="approvals-row2">
+      <div class="approvals-count"><span id="approvalsCountTxt">0</span><span class="approvals-slash">/</span><input type="number" id="approvalsGoalInput" min="1" step="1" inputmode="numeric"></div>
+      <button class="approvals-minus" id="btnApprovalMinus" title="Corregir (−1)">−1</button>
+      <button class="btn approvals-plus" id="btnApprovalPlus">+1 Approval</button>
+    </div>
+    <div class="approvals-bar-track"><div class="approvals-bar-fill" id="approvalsBarFill"></div></div>
+    <div class="approvals-pct" id="approvalsPct"></div>
+  </div>
+
   <div class="overall editor" id="overallWrap"></div>
 
   <div id="bannersWrap" class="editor"></div>
@@ -424,7 +424,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.0 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.1 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
