@@ -247,18 +247,19 @@
   .modal-actions{display:flex;gap:8px;}
   .modal-actions .btn{flex:1;padding:10px;}
 
-  .approvals-card{background:var(--p3-soft);border:1px solid var(--p3);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;}
-  .approvals-row1{display:flex;align-items:center;margin-bottom:8px;}
-  .approvals-title{font-size:13px;font-weight:700;color:var(--p3);}
+  .approvals-card{background:var(--p3);border:none;border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;}
+  .approvals-row1{display:flex;align-items:center;margin-bottom:6px;}
+  .approvals-title{font-size:12.5px;font-weight:700;color:#fff;}
   .approvals-row2{display:flex;align-items:center;gap:8px;}
-  .approvals-count{display:flex;align-items:baseline;gap:2px;font-weight:700;font-size:22px;color:var(--ink);flex:1;}
-  .approvals-slash{color:var(--muted);font-weight:500;font-size:16px;margin:0 2px;}
-  .approvals-count input{width:52px;border:1px solid var(--line);border-radius:8px;padding:4px 6px;font-size:16px;font-weight:700;font-family:inherit;color:var(--ink);background:var(--surface);}
-  .approvals-minus{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;}
-  .approvals-plus{background:var(--p3);color:#fff;font-weight:700;padding:10px 16px;}
-  .approvals-bar-track{background:#fff;border-radius:99px;height:8px;overflow:hidden;margin-top:10px;}
-  .approvals-bar-fill{background:var(--p3);height:100%;border-radius:99px;transition:width .3s ease;}
-  .approvals-pct{font-size:11px;color:var(--muted);margin-top:4px;text-align:right;}
+  .approvals-count{display:flex;align-items:baseline;gap:2px;font-weight:700;font-size:20px;color:#fff;flex:1;}
+  .approvals-slash{color:rgba(255,255,255,.65);font-weight:500;font-size:15px;margin:0 2px;}
+  .approvals-count input{width:48px;border:1px solid rgba(255,255,255,.4);border-radius:8px;padding:3px 6px;font-size:15px;font-weight:700;font-family:inherit;color:#fff;background:rgba(255,255,255,.15);}
+  .approvals-minus{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:7px 11px;font-size:13px;font-weight:700;cursor:pointer;}
+  .approvals-minus:disabled{opacity:.4;cursor:default;}
+  .approvals-plus{background:#fff;color:var(--p3);font-weight:700;padding:9px 15px;}
+  .approvals-bar-track{background:rgba(255,255,255,.28);border-radius:99px;height:6px;overflow:hidden;margin-top:8px;}
+  .approvals-bar-fill{background:#fff;height:100%;border-radius:99px;transition:width .3s ease;}
+  .approvals-pct{font-size:11px;color:rgba(255,255,255,.85);margin-top:4px;text-align:right;}
 
   .banner{border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12.5px;display:flex;align-items:flex-start;gap:8px;}
   .banner-cross{background:var(--danger-soft);color:var(--danger);}
@@ -380,8 +381,6 @@
     </div>
   </div>
 
-  <div class="overall editor" id="overallWrap"></div>
-
   <div class="approvals-card" id="approvalsCard">
     <div class="approvals-row1">
       <span class="approvals-title">📈 Approvals de la semana</span>
@@ -394,6 +393,8 @@
     <div class="approvals-bar-track"><div class="approvals-bar-fill" id="approvalsBarFill"></div></div>
     <div class="approvals-pct" id="approvalsPct"></div>
   </div>
+
+  <div class="overall editor" id="overallWrap"></div>
 
   <div id="bannersWrap" class="editor"></div>
 
@@ -424,7 +425,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.2 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.3 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
