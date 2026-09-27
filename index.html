@@ -181,6 +181,8 @@
   .visit-count{font-size:10.5px;color:var(--muted);font-style:italic;}
   .maplink{font-size:11px;color:#2C4A72;text-decoration:underline;}
   .maplink-off{font-size:11px;color:var(--muted);font-style:italic;}
+  .loc-auto{font-size:10.5px;color:#2F7A4D;font-weight:600;}
+  .loc-manual{font-size:10.5px;color:#B3261E;font-weight:700;}
   .maps-hint{font-size:10.5px;color:var(--muted);margin:4px 0 4px;line-height:1.4;}
   .zona-validation{font-size:11px;font-weight:600;margin:4px 0 2px;line-height:1.4;}
   .coords-input{width:100%;border:1px solid var(--muted);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:var(--ink);}
@@ -385,7 +387,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.8.0 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.9.0 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -932,6 +934,19 @@
     const log = getEvidenceLog(e);
     return log.length ? log[log.length-1] : null;
   }
+  // Distingue si la coordenada la puso el GPS solo, o si la persona la pegó a mano.
+  // Esto importa para el reporte: un "manual" no es prueba de nada por sí solo,
+  // así que se marca aparte para que el gerente lo note.
+  function locSource(v){
+    if(!v || v.lat==null) return null;
+    return (v.pastedCoords && v.pastedCoords.trim()) ? 'manual' : 'auto';
+  }
+  function locSourceBadge(v){
+    const src = locSource(v);
+    if(src==='manual') return '✍️ manual';
+    if(src==='auto') return '📍 GPS automático';
+    return '';
+  }
   // ---------- Validación inicio/fin de promoción (solo Zona) ----------
   // Cada Zona ahora pide DOS registros por recorrido: inicio y fin (foto + coordenadas
   // + hora en cada uno), para poder comparar dónde empezó, dónde terminó y cuánto
@@ -1015,7 +1030,8 @@
     const mapUrl = (inicio.lat!=null && fin.lat!=null)
       ? `https://www.google.com/maps/dir/?api=1&origin=${inicio.lat},${inicio.lng}&destination=${fin.lat},${fin.lng}&travelmode=walking`
       : null;
-    return { elapsedMin, dist, level, mapUrl };
+    const hasManual = (locSource(inicio)==='manual') || (locSource(fin)==='manual');
+    return { elapsedMin, dist, level, mapUrl, hasManual };
   }
   function zonaLevelColor(level){
     if(level==='critical') return '#B3261E';
@@ -1045,7 +1061,7 @@
     if(stats.elapsedMin!=null) parts.push(`${stats.elapsedMin} min`);
     if(stats.dist!=null) parts.push(`${Math.round(stats.dist)} m`);
     if(!parts.length) return null;
-    return { level: stats.level, text: parts.join(' · '), mapUrl: stats.mapUrl };
+    return { level: stats.level, text: parts.join(' · '), mapUrl: stats.mapUrl, hasManual: stats.hasManual };
   }
   // Resumen de cambaceo de la semana: una fila por CADA promoción completa (inicio+fin)
   // de CADA Zona capturada esta semana — para verla toda junta de un vistazo, en vez de
@@ -1065,7 +1081,8 @@
           elapsedMin: stats.elapsedMin,
           dist: stats.dist,
           level: stats.level,
-          mapUrl: stats.mapUrl
+          mapUrl: stats.mapUrl,
+          hasManual: stats.hasManual
         });
       });
     });
@@ -1104,12 +1121,13 @@
     if(latest){
       const mapUrl = (latest.lat!=null) ? `https://www.google.com/maps?q=${latest.lat},${latest.lng}` : null;
       const label = isZona && latest.phase ? (latest.phase==='inicio'?'Inicio de promoción':'Fin de promoción') : 'Última visita';
+      const srcBadge = locSource(latest)==='manual' ? `<span class="loc-manual">✍️ manual</span>` : (locSource(latest)==='auto' ? `<span class="loc-auto">📍 GPS automático</span>` : '');
       html += `
         <span class="evidence-ok">
           ${latest.photo?`<img src="${latest.photo}" alt="evidencia — toca para ampliar" data-action="zoom">`:''}
           ✓ ${label}: ${latest.date?fmtDate(latest.date):''}${latest.time?(' · '+latest.time):''}
         </span>
-        ${mapUrl?`<a class="maplink" href="${mapUrl}" target="_blank" rel="noopener">📍 Ver ubicación</a>`:`<span class="maplink-off">ubicación no disponible</span> ${mapsHelper}`}
+        ${mapUrl?`<a class="maplink" href="${mapUrl}" target="_blank" rel="noopener">📍 Ver ubicación</a> ${srcBadge}`:`<span class="maplink-off">ubicación no disponible</span> ${mapsHelper}`}
       `;
     } else {
       html += `<span class="evidence-warn">⚠ sin evidencia</span>`;
@@ -1134,7 +1152,8 @@
       const vline = zonaValidationLine(e);
       if(vline){
         const routeLink = vline.mapUrl ? ` <a class="maplink" href="${vline.mapUrl}" target="_blank" rel="noopener">🗺️ Ver ruta inicio→fin</a>` : '';
-        html += `<p class="zona-validation" style="color:${zonaLevelColor(vline.level)}">${zonaLevelIcon(vline.level)} ${escapeHTML(vline.text)}${routeLink}</p>`;
+        const manualNote = vline.hasManual ? ` <span class="loc-manual">✍️ incluye coordenada manual</span>` : '';
+        html += `<p class="zona-validation" style="color:${zonaLevelColor(vline.level)}">${zonaLevelIcon(vline.level)} ${escapeHTML(vline.text)}${routeLink}${manualNote}</p>`;
       }
     }
     if(latest && latest.lat==null){
@@ -2026,9 +2045,9 @@
           ${isParcialFicha?`<span class="ev-tag" style="color:#1E5FA8">◐ pago parcial</span>`:''}
           ${e.statusTime?`<span class="rd">${formatStatusStamp(e)}</span>`:''}
           ${e.comment ? `<span class="rc">${escapeHTML(e.comment)}</span>` : ''}
-          ${latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a></span>` : ''}
-          ${latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)}</span>` : ''}
-          ${zline ? `<span class="rc" style="color:${zonaLevelColor(zline.level)};font-weight:700">${zonaLevelIcon(zline.level)} ${escapeHTML(zline.text)}</span>${zline.mapUrl?` <a class="rc" href="${zline.mapUrl}" target="_blank" rel="noopener">🗺️ ruta</a>`:''}` : ''}
+          ${latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a> <span class="${locSource(latestEv)==='manual'?'loc-manual':'loc-auto'}">${locSourceBadge(latestEv)}</span></span>` : ''}
+          ${latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)} <span class="loc-manual">✍️ manual (sin confirmar)</span></span>` : ''}
+          ${zline ? `<span class="rc" style="color:${zonaLevelColor(zline.level)};font-weight:700">${zonaLevelIcon(zline.level)} ${escapeHTML(zline.text)}</span>${zline.mapUrl?` <a class="rc" href="${zline.mapUrl}" target="_blank" rel="noopener">🗺️ ruta</a>`:''}${zline.hasManual?` <span class="loc-manual">✍️ incluye manual</span>`:''}` : ''}
         </div>`;
       }).join('') : `<div class="report-empty">Sin cuentas en este bloque.</div>`;
       const c = { done: list.filter(e=>isDone(sec,e)).length, total: list.length };
@@ -2045,6 +2064,7 @@
             <span class="rd">${fmtDate(r.date)}</span>
             <span class="rc" style="color:${zonaLevelColor(r.level)};font-weight:700">${zonaLevelIcon(r.level)} ${escapeHTML(parts.join(' · '))}</span>
             ${r.mapUrl?`<a class="rc" href="${r.mapUrl}" target="_blank" rel="noopener">🗺️ Ver ruta</a>`:''}
+            ${r.hasManual?`<span class="rc loc-manual">✍️ incluye manual</span>`:''}
           </div>`;
         }).join('');
         return `<div class="report-sec">
@@ -2304,11 +2324,12 @@
               const phaseLabel = v.phase ? (v.phase==='inicio'?'Inicio':'Fin') + ' — ' : '';
               const dLabel = `${phaseLabel}${v.date?fmtDate(v.date):'?'}${v.time?' '+v.time:''}`;
               if(v.lat!=null){
-                doc.setTextColor(44,74,114);
-                doc.textWithLink(`  ${dLabel} — Ver en mapa (${v.lat.toFixed(5)}, ${v.lng.toFixed(5)})`, marginL+20, y, {url:`https://www.google.com/maps?q=${v.lat},${v.lng}`});
+                const srcTag = locSource(v)==='manual' ? ' [manual]' : ' [GPS auto]';
+                doc.setTextColor(locSource(v)==='manual' ? 179 : 44, locSource(v)==='manual' ? 38 : 74, locSource(v)==='manual' ? 30 : 114);
+                doc.textWithLink(`  ${dLabel} — Ver en mapa (${v.lat.toFixed(5)}, ${v.lng.toFixed(5)})${srcTag}`, marginL+20, y, {url:`https://www.google.com/maps?q=${v.lat},${v.lng}`});
               } else if(v.pastedCoords){
-                doc.setTextColor(90,100,110);
-                doc.text(`  ${dLabel} — Coordenadas: ${v.pastedCoords}`, marginL+20, y);
+                doc.setTextColor(179,38,30);
+                doc.text(`  ${dLabel} — Coordenadas: ${v.pastedCoords} [manual, sin confirmar]`, marginL+20, y);
               } else {
                 doc.setTextColor(179,38,30);
                 doc.text(`  ${dLabel} — sin coordenadas`, marginL+20, y);
@@ -2325,7 +2346,8 @@
               doc.setFontSize(9);
               doc.setTextColor(...rgbPdf);
               checkBreak(11);
-              const zLines = wrapText(`${iconPdf} ${zlinePdf.text}`, 9, pageW-marginL-marginR-18);
+              const manualTagPdf = zlinePdf.hasManual ? ' [incluye manual]' : '';
+              const zLines = wrapText(`${iconPdf} ${zlinePdf.text}${manualTagPdf}`, 9, pageW-marginL-marginR-18);
               zLines.forEach(l=>{ checkBreak(11); doc.text(l, marginL+16, y); y+=11; });
               if(zlinePdf.mapUrl){
                 checkBreak(11);
@@ -2361,7 +2383,7 @@
             const parts = [];
             if(r.elapsedMin!=null) parts.push(`${r.elapsedMin} min`);
             if(r.dist!=null) parts.push(`${Math.round(r.dist)} m`);
-            const line = `${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}`;
+            const line = `${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}${r.hasManual?' [incluye manual]':''}`;
             const rgbRow = r.level==='critical'?[179,38,30]:r.level==='warn'?[138,90,0]:[47,122,77];
             const iconRow = r.level==='critical'?'[!!]':r.level==='warn'?'[!]':'[OK]';
             doc.setFontSize(9); doc.setTextColor(...rgbRow);
@@ -2441,11 +2463,11 @@
         const evLogWa = getEvidenceLog(e);
         const latestEvWa = evLogWa.length ? evLogWa[evLogWa.length-1] : null;
         if(evLogWa.length>1) out += `\n   (${evLogWa.length} registros: ${evLogWa.map(v=>`${fmtDate(v.date)}${v.phase?' '+v.phase:''}`).join(', ')})`;
-        if(latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng}`;
-        else if(latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords}`;
+        if(latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng} ${locSource(latestEvWa)==='manual'?'(✍️ manual)':'(GPS automático)'}`;
+        else if(latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords} (✍️ manual, sin confirmar)`;
         if(sec.key==='prospeccion'){
           const zlineWa = zonaValidationLine(e);
-          if(zlineWa) out += `\n   ${zonaLevelIcon(zlineWa.level)} ${zlineWa.text}${zlineWa.mapUrl?`\n   🗺️ ${zlineWa.mapUrl}`:''}`;
+          if(zlineWa) out += `\n   ${zonaLevelIcon(zlineWa.level)} ${zlineWa.text}${zlineWa.hasManual?' (✍️ incluye manual)':''}${zlineWa.mapUrl?`\n   🗺️ ${zlineWa.mapUrl}`:''}`;
         }
         out += `\n`;
       });
@@ -2457,7 +2479,7 @@
             const parts = [];
             if(r.elapsedMin!=null) parts.push(`${r.elapsedMin} min`);
             if(r.dist!=null) parts.push(`${Math.round(r.dist)} m`);
-            out += `${zonaLevelIcon(r.level)} ${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}\n`;
+            out += `${zonaLevelIcon(r.level)} ${r.name} — ${fmtDate(r.date)} — ${parts.join(' · ')}${r.hasManual?' (✍️ incluye manual)':''}\n`;
             if(r.mapUrl) out += `   🗺️ ${r.mapUrl}\n`;
           });
         }
