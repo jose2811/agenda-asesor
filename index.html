@@ -45,10 +45,11 @@
   .cfg-item.empty{color:var(--muted);font-weight:500;font-style:italic;}
   .cfg-dot{color:var(--muted);flex-shrink:0;}
   .cfg-edit-btn{margin-left:2px;font-size:11px;color:var(--p1);background:none;border:none;cursor:pointer;font-weight:600;font-family:inherit;padding:0;flex-shrink:0;}
-  .cfg-edit-row{display:flex;gap:6px;flex:1;min-width:180px;}
+  .cfg-edit-row{display:flex;gap:6px;flex:1;min-width:180px;flex-wrap:wrap;}
   .cfg-edit-row.hidden{display:none;}
-  .cfg-edit-row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
-  .cfg-edit-row input:focus{outline:2px solid var(--ink);outline-offset:1px;}
+  .cfg-edit-row input, .cfg-edit-row select{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-family:inherit;color:var(--ink);background:#fff;}
+  .cfg-edit-row input:focus, .cfg-edit-row select:focus{outline:2px solid var(--ink);outline-offset:1px;}
+  .cfg-edit-row input#sucursalOtra{flex-basis:100%;}
 
   .overall{background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;}
   .hero-donut-row{display:flex;align-items:center;gap:14px;}
@@ -350,7 +351,17 @@
         <button class="cfg-edit-btn" id="cfgEditBtn">editar</button>
       </div>
       <div class="cfg-edit-row" id="cfgEditRow">
-        <input type="text" id="sucursal" placeholder="Sucursal">
+        <select id="sucursalSelect">
+          <option value="">Selecciona tu sucursal</option>
+          <option value="Oblatos">Oblatos</option>
+          <option value="Tlajomulco">Tlajomulco</option>
+          <option value="Tlaquepaque">Tlaquepaque</option>
+          <option value="Tonalá">Tonalá</option>
+          <option value="Zapopan">Zapopan</option>
+          <option value="__otra__">Otra (especificar)</option>
+        </select>
+        <input type="text" id="sucursalOtra" placeholder="Nombre de tu sucursal" style="display:none;">
+        <input type="hidden" id="sucursal">
         <input type="text" id="asesor" placeholder="Nombre del asesor">
       </div>
     </div>
@@ -387,7 +398,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.9.1 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.9.2 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -1944,6 +1955,8 @@
       state = emptyState();
       if(cfg){ state.asesor=cfg.asesor||''; state.sucursal=cfg.sucursal||''; }
       asesorInput.value = state.asesor; sucursalInput.value = state.sucursal;
+      refreshCfgDisplay();
+      syncSucursalSelectFromValue();
       wipedToday = true;
     }
     renderSections(); renderOverall(); renderBanners(); refreshWeekly();
@@ -2543,12 +2556,29 @@
   // ---------- Sucursal/Asesor: se capturan una sola vez y casi nunca se vuelven a
   // tocar — por default se muestran como texto fijo con un botón "editar", en vez
   // de ocupar un formulario abierto todo el tiempo. ----------
+  // El select+"Otra" son solo una capa visual para evitar typos en las 5 sucursales
+  // conocidas — el dato real que usa el resto de la app sigue siendo #sucursal
+  // (ahora un input oculto), así no hay que tocar cada lugar donde ya se lee
+  // sucursalInput.value. "Otra" deja la puerta abierta para una oficina nueva.
+  const SUCURSALES_FIJAS = ['Oblatos','Tlajomulco','Tlaquepaque','Tonalá','Zapopan'];
+  function syncSucursalSelectFromValue(){
+    const v = sucursalInput.value || '';
+    const sel = $('#sucursalSelect'), otra = $('#sucursalOtra');
+    if(!sel) return;
+    if(!v){ sel.value=''; otra.style.display='none'; otra.value=''; }
+    else if(SUCURSALES_FIJAS.includes(v)){ sel.value=v; otra.style.display='none'; otra.value=''; }
+    else { sel.value='__otra__'; otra.style.display=''; otra.value=v; }
+  }
   function refreshCfgDisplay(){
     const sTxt = $('#cfgSucursalTxt'), aTxt = $('#cfgAsesorTxt');
     sTxt.textContent = sucursalInput.value || 'Sin sucursal';
     sTxt.classList.toggle('empty', !sucursalInput.value);
     aTxt.textContent = asesorInput.value || 'Sin asesor';
     aTxt.classList.toggle('empty', !asesorInput.value);
+    // OJO: no sincroniza aquí el <select> — se llama por separado solo cuando el
+    // valor de sucursal viene de FUERA (cargar config guardada), nunca cuando el
+    // cambio vino del propio select/"Otra", o se pisaría "Otra" recién elegida
+    // (con el texto libre todavía vacío) de vuelta a "Selecciona tu sucursal".
   }
   function setCfgEditing(open){
     $('#cfgEditRow').classList.toggle('hidden', !open);
@@ -2559,12 +2589,32 @@
   $('#cfgEditBtn').addEventListener('click', ()=>{
     cfgEditing = !cfgEditing;
     setCfgEditing(cfgEditing);
-    if(cfgEditing) sucursalInput.focus();
+    if(cfgEditing) $('#sucursalSelect').focus();
   });
 
   // ---------- Init / date switching ----------
   asesorInput.addEventListener('input', ()=>{ state.asesor = asesorInput.value; saveState(); saveConfig(); refreshCfgDisplay(); });
   sucursalInput.addEventListener('change', ()=>{ state.sucursal = sucursalInput.value; saveState(); saveConfig(); refreshCfgDisplay(); });
+  $('#sucursalSelect').addEventListener('change', ()=>{
+    const sel = $('#sucursalSelect'), otra = $('#sucursalOtra');
+    if(sel.value === '__otra__'){
+      otra.style.display = '';
+      otra.value = '';
+      sucursalInput.value = '';
+      setTimeout(()=>otra.focus(), 30);
+    } else {
+      otra.style.display = 'none';
+      otra.value = '';
+      sucursalInput.value = sel.value;
+    }
+    state.sucursal = sucursalInput.value;
+    saveState(); saveConfig(); refreshCfgDisplay();
+  });
+  $('#sucursalOtra').addEventListener('input', ()=>{
+    sucursalInput.value = $('#sucursalOtra').value;
+    state.sucursal = sucursalInput.value;
+    saveState(); saveConfig(); refreshCfgDisplay();
+  });
   let dateChangeBusy = false;
   fechaInput.addEventListener('change', async ()=>{
     if(dateChangeBusy){ return; }
@@ -2577,6 +2627,7 @@
       if(cfg){ state.asesor = state.asesor || cfg.asesor; state.sucursal = state.sucursal || cfg.sucursal; }
       asesorInput.value = state.asesor||''; sucursalInput.value = state.sucursal||'';
       refreshCfgDisplay();
+      syncSucursalSelectFromValue();
       renderSections(); renderOverall(); renderBanners(); refreshWeekly();
     } finally {
       dateChangeBusy = false;
@@ -2590,6 +2641,7 @@
     if(cfg){ state.asesor = state.asesor || cfg.asesor || ''; state.sucursal = state.sucursal || cfg.sucursal || ''; }
     asesorInput.value = state.asesor||''; sucursalInput.value = state.sucursal||'';
     refreshCfgDisplay();
+    syncSucursalSelectFromValue();
     // Primera vez (sin nada capturado todavía): arranca abierto para que puedan llenarlo.
     cfgEditing = !(sucursalInput.value || asesorInput.value);
     setCfgEditing(cfgEditing);
