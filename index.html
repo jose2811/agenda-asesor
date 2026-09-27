@@ -425,7 +425,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.3 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.10.4 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -2477,9 +2477,9 @@
     checkBreak(90);
     doc.setDrawColor(28,43,57); doc.setLineWidth(1.2); doc.line(marginL,y,pageW-marginR,y); y+=20;
     function statBoxes(items, yy){
-      const bw = (pageW-marginL-marginR-16)/3;
+      const gap = 8, bw = (pageW-marginL-marginR-gap*(items.length-1))/items.length;
       items.forEach((it,idx)=>{
-        const bx = marginL + idx*(bw+8);
+        const bx = marginL + idx*(bw+gap);
         doc.setDrawColor(218,221,214); doc.setLineWidth(0.8);
         doc.roundedRect(bx, yy, bw, 40, 5, 5, 'S');
         doc.setFont(undefined,'bold'); doc.setFontSize(14); doc.setTextColor(28,43,57);
@@ -2499,10 +2499,6 @@
       {n:`${weeklyGoals.prospectos}/10`, l:'Prospectos semana'},
       {n:`${weeklyGoals.desembolsosNuevos}/2`, l:'Desembolsos nuevos'},
       {n:`${weeklyGoals.renovDone}/${weeklyGoals.renovTotal}`, l:'Renovaciones'},
-    ], y);
-    y += 50;
-    checkBreak(50);
-    statBoxes([
       {n:`${weekApprovals.count}/${weekApprovals.goal}`, l:'Approvals semana'},
     ], y);
 
