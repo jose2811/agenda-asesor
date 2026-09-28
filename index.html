@@ -425,7 +425,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.11.2 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.12.0 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -2759,6 +2759,15 @@
     renderSections(); renderOverall(); renderBanners(); await refreshWeekly();
   }
   init();
+
+  // Guarda una copia local de la app para que el acceso directo pueda abrir
+  // aunque no haya datos/wifi en ese momento — siempre intenta la versión más
+  // reciente primero, y solo usa lo guardado si de verdad no hay conexión.
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('sw.js').catch(()=>{});
+    });
+  }
 })();
 </script>
 </body>
