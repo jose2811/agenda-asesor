@@ -426,7 +426,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.13.0 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · <span id="footerVersion">v3.14.0</span> —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -450,6 +450,9 @@
 
 <script>
 (function(){
+  // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
+  // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
+  const APP_VERSION = 'v3.14.0';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -2270,6 +2273,10 @@
       const logoH = 26, logoW = logoH*(329/65);
       doc.addImage('data:image/png;base64,'+PDF_LOGO_B64, 'PNG', marginL+(pageW-marginL-marginR-logoW)/2, y+(barH-logoH)/2, logoW, logoH);
     }catch(err){ console.error(err); }
+    // Versión de la app, visible desde la primera línea del PDF — para poder
+    // detectar a simple vista si alguien está usando una agenda desactualizada.
+    doc.setFont(undefined,'normal'); doc.setFontSize(8.5); doc.setTextColor(255,255,255);
+    doc.text(APP_VERSION, pageW-marginR-8, y+13, {align:'right'});
     y += barH + 22;
 
     // ---------- Título ----------
@@ -2750,6 +2757,8 @@
   });
 
   async function init(){
+    const fv = document.getElementById('footerVersion');
+    if(fv) fv.textContent = APP_VERSION;
     const cfg = await loadConfig();
     await openDate(fechaInput.value);
     if(cfg){ state.asesor = state.asesor || cfg.asesor || ''; state.sucursal = state.sucursal || cfg.sucursal || ''; }
