@@ -12,7 +12,7 @@
 //
 // IMPORTANTE: subir CACHE_VERSION cada vez que se publique un cambio grande,
 // para que los cachés viejos se limpien solos en el siguiente open.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `agenda-asesor-${CACHE_VERSION}`;
 const CORE_ASSETS = [
   './',

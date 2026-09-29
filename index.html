@@ -318,12 +318,13 @@
       <h4>Mora de la semana pasada (02)</h4>
       <p>Aquí van las cuentas de 1-7 días que <b>no se cerraron la semana pasada</b> — captúralas el sábado o el lunes, con nombre y los días de atraso que traigan en ese momento. Los días avanzan solos por dentro (sin que tengas que tocar nada), comparando cuándo la capturaste contra hoy.<br>
       <b>Si llega a 8 días, no desaparece de aquí</b> — se sigue mostrando en esta cintilla, marcada "también en 8-60", Y ADEMÁS aparece en Seguimiento 8-60. Es la misma cuenta real en los dos lugares: si la actualizas desde cualquiera de los dos, se refleja en ambos. Así nadie deja de darle seguimiento solo porque ya cumplió una semana de atraso.<br>
-      <b>Requiere evidencia</b> (foto + coordenadas) mientras no esté pagada — igual que siempre, sin importar si ya cruzó los 8 días. Seguimiento 8-60 nunca pide evidencia, así que esta sigue siendo la única cintilla donde de verdad se exige. <b>Puedes registrar una visita nueva cada día</b> — el botón nunca desaparece, así que si la visitas varios días seguidos hasta que cierre, quedan todas guardadas, no solo la primera.<br>
+      <b>Requiere evidencia</b> (foto + coordenadas) mientras no esté pagada — igual que siempre, sin importar si ya cruzó los 8 días. Esa misma evidencia se comparte con Seguimiento 8-60, porque es la misma cuenta real en los dos lugares. <b>Puedes registrar una visita nueva cada día</b> — el botón nunca desaparece, así que si la visitas varios días seguidos hasta que cierre, quedan todas guardadas, no solo la primera.<br>
       <b>Aviso reforzado:</b> el número de días se pinta ámbar al llegar a 6, y rojo al llegar a 7 — con un banner de alerta un día antes del salto, además del banner del mismo día.<br>
       Arriba tienes tu propio anillo de cumplimiento, igual que en Fichas de la semana — % de cuentas ya cerradas contra el total que capturaste.</p>
 
       <h4>Seguimiento y compromisos 8-60 (05)</h4>
-      <p>Mezcla dos cosas: lo que captures aquí directo (mora vieja de verdad, o compromisos que ya traías) — eso sí avanza de días automático, día a día — y las cuentas de "Mora de la semana pasada" que ya cruzaron los 8 días, mostradas tal cual, sin copiarlas. Desde aquí no se pide evidencia ni se puede borrar una cuenta prestada de la otra cintilla — eso se hace desde su casa, en el bloque 02.</p>
+      <p>Mezcla dos cosas: lo que captures aquí directo (mora vieja de verdad, o compromisos que ya traías) — eso sí avanza de días automático, día a día — y las cuentas de "Mora de la semana pasada" que ya cruzaron los 8 días, mostradas tal cual, sin copiarlas. Desde aquí no se puede borrar una cuenta prestada de la otra cintilla — eso se hace desde su casa, en el bloque 02.<br>
+      <b>Requiere evidencia</b> (foto + coordenadas) mientras no esté pagada — igual que Mora de la semana pasada. En las cuentas prestadas es la misma evidencia de siempre (misma cuenta real); en lo que captures directo aquí, es nueva.</p>
 
       <h4>Clientes a desembolsar (03)</h4>
       <p>Aquí van los prospectos reales que sí pueden generar un desembolso: <b>Nuevo</b>, <b>Renovación</b>, <b>LNR</b> (Liquidado No Renovado — clientes que ya terminaron su crédito y no renovaron, se les vuelve a buscar) y <b>Lead Digital</b>. Viven en una sola lista que dura toda la semana (no se pierden aunque cambies de día), hasta que uses "Borrar días anteriores".<br>
@@ -425,7 +426,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.12.0 —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · v3.13.0 —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -454,7 +455,7 @@
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
     {id:'s3', idx:'03', key:'desembolso', type:'prospeccion', title:'Clientes a desembolsar', hint:'Nuevo, Renovación, LNR (Liquidado No Renovado) o Lead Digital. Vive toda la semana, hasta "Borrar días anteriores".', namePh:'Nombre del cliente', detailPh:'Monto o referencia (opcional)', detailType:'text', extraField:'tipoDesembolso'},
     {id:'s4', idx:'04', key:'prospeccion', type:'prospeccion', title:'Prospección y cambaceo', hint:'Zona de cambaceo — vive toda la semana, hasta "Borrar días anteriores". Registra inicio y fin de cada promoción con foto y coordenadas.', namePh:'Zona', detailPh:'Hora estimada', detailType:'time'},
-    {id:'s5', idx:'05', key:'mora860', type:'mora', title:'Seguimiento y compromisos 8–60', hint:'Lunes: captura las cuentas con compromiso que traigas en este rango. Estas avanzan solas día a día. También aparecen aquí, sin copiarlas, las cuentas de "Mora de la semana pasada" que ya cruzaron 8 días. No es toda la cartera.', namePh:'Nombre del cliente', detailPh:'Días de atraso', detailType:'number'},
+    {id:'s5', idx:'05', key:'mora860', type:'mora', title:'Seguimiento y compromisos 8–60', hint:'Lunes: captura las cuentas con compromiso que traigas en este rango. Estas avanzan solas día a día. También aparecen aquí, sin copiarlas, las cuentas de "Mora de la semana pasada" que ya cruzaron 8 días. No es toda la cartera. Requiere evidencia (foto + coordenadas) mientras no esté pagada.', namePh:'Nombre del cliente', detailPh:'Días de atraso', detailType:'number'},
   ];
   const STATUS_MORA = [
     {v:'pendiente', l:'Pendiente', cls:'st-pendiente'},
@@ -1154,11 +1155,15 @@
   }
   // Cuándo aplica pedir evidencia (foto + coordenadas):
   // - Mora de la semana pasada: mientras no esté pagada (incluye Pago parcial).
+  // - Seguimiento 8-60: mismo criterio que Mora17 — mientras no esté pagada. Las
+  //   cuentas "prestadas" de Mora17 que ya cruzaron 8 días son la MISMA cuenta real
+  //   (mismo objeto), así que su evidencia ya se comparte entre las dos cintillas.
   // - Fichas de la semana: "Complicada" o "Pago parcial" (probablemente no cierre completo,
   //   toca ir presencial a validar).
   // - Prospección: solo Zona (cambaceo), mientras no esté "Realizado".
   function evidenceApplies(sec, e){
     if(sec.key==='mora17') return e.status!=='pagado';
+    if(sec.key==='mora860') return e.status!=='pagado';
     if(sec.key==='fichas') return e.status==='complicada' || e.status==='parcial';
     if(sec.key==='prospeccion') return e.tipo==='Zona' && e.status!=='realizado';
     return false;
