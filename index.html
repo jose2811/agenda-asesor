@@ -470,7 +470,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.16.0';
+  const APP_VERSION = 'v3.16.1';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -678,10 +678,15 @@
   function nowTime(){ return new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}); }
   function fmtDate(dateStr){ const [y,m,d]=dateStr.split('-'); return `${d}/${m}/${y}`; }
   const DIAS_CORTOS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const DIAS_LARGOS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   function fmtDayShort(dateStr){
     const d = new Date(dateStr+'T00:00:00');
     const [y,m,dd] = dateStr.split('-');
     return `${DIAS_CORTOS[d.getDay()]} ${dd}/${m}`;
+  }
+  function fmtDateWithDay(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    return `${DIAS_LARGOS[d.getDay()]} ${fmtDate(dateStr)}`;
   }
   function toDateStr(d){
     const y = d.getFullYear();
@@ -2697,7 +2702,7 @@
             checkBreak(18);
             y += 4;
             doc.setFont(undefined,'bold'); doc.setFontSize(9.5); doc.setTextColor(28,43,57);
-            doc.text(fmtDate(ev.date), marginL+10, y); y += 12;
+            doc.text(fmtDateWithDay(ev.date), marginL+10, y); y += 12;
             doc.setFont(undefined,'normal');
           }
           if(ev.gapBefore){
