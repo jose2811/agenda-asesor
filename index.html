@@ -180,6 +180,7 @@
   .evidence-ok img{width:30px;height:30px;object-fit:cover;border-radius:5px;border:1px solid var(--line);flex-shrink:0;}
   .evidence-warn{font-size:11px;color:var(--danger);font-weight:600;}
   .visit-count{font-size:10.5px;color:var(--muted);font-style:italic;}
+  .visit-nota{width:100%;margin:2px 0 0;font-size:11.5px;color:var(--ink);}
   .maplink{font-size:11px;color:#2C4A72;text-decoration:underline;}
   .maplink-off{font-size:11px;color:var(--muted);font-style:italic;}
   .loc-auto{font-size:10.5px;color:#2F7A4D;font-weight:600;}
@@ -217,6 +218,9 @@
   .report-line .rd{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);}
   .report-line .rs{font-size:10.5px;font-weight:700;}
   .report-line .rc{width:100%;font-size:11.5px;color:var(--muted);font-style:italic;}
+  .visit-notes{width:100%;font-size:11px;color:var(--ink);background:var(--bg);border-radius:6px;padding:4px 8px;margin-top:2px;}
+  .visit-note-line{padding:1px 0;}
+  .visit-note-line + .visit-note-line{border-top:1px dashed var(--line);}
   .ev-tag{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;}
   .report-thumb{width:22px;height:22px;object-fit:cover;border-radius:4px;border:1px solid var(--line);flex-shrink:0;}
   .report-empty{font-size:11.5px;color:var(--muted);font-style:italic;}
@@ -246,6 +250,8 @@
   .modal-box p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.5;}
   .modal-actions{display:flex;gap:8px;}
   .modal-actions .btn{flex:1;padding:10px;}
+  .note-textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:14px;font-size:13.5px;font-family:inherit;color:var(--ink);resize:vertical;box-sizing:border-box;}
+  .modal-actions .btn:disabled{opacity:.5;cursor:not-allowed;}
 
   .approvals-card{background:var(--p3);border:none;border-radius:var(--radius);padding:10px 14px;margin-bottom:10px;}
   .approvals-row1{display:flex;align-items:center;margin-bottom:6px;}
@@ -443,6 +449,18 @@
   </div>
 </div>
 
+<div class="modal-overlay hidden" id="evidenceNoteModal">
+  <div class="modal-box">
+    <h3>¿Qué pasó en esta visita?</h3>
+    <p>Escribe algo corto — esto es lo que va a ver tu gerente junto con la foto y la hora. Ej.: "Cliente pidió que regrese a las 4pm", "No se localizó", "Abonó $2,000 de $4,000 comprometidos".</p>
+    <textarea id="evidenceNoteInput" class="note-textarea" rows="3" placeholder="Qué pasó..." maxlength="240"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="evidenceNoteCancel">Cancelar visita</button>
+      <button class="btn btn-primary" id="evidenceNoteSave" disabled>Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="lightbox hidden" id="photoLightbox">
   <img id="lightboxImg" src="" alt="Evidencia ampliada">
   <button id="lightboxClose" title="Cerrar">✕</button>
@@ -452,7 +470,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.14.0';
+  const APP_VERSION = 'v3.15.0';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -1198,6 +1216,7 @@
           ✓ ${label}: ${latest.date?fmtDate(latest.date):''}${latest.time?(' · '+latest.time):''}
         </span>
         ${mapUrl?`<a class="maplink" href="${mapUrl}" target="_blank" rel="noopener">📍 Ver ubicación</a> ${srcBadge}`:`<span class="maplink-off">ubicación no disponible</span> ${mapsHelper}`}
+        ${latest.nota?`<p class="visit-nota">💬 ${escapeHTML(latest.nota)}</p>`:''}
       `;
     } else {
       html += `<span class="evidence-warn">⚠ sin evidencia</span>`;
@@ -1629,10 +1648,18 @@
       const visit = {photo, lat, lng, locError, pastedCoords:'', time: nowTime(), date: fechaInput.value};
       const isZonaEntry = key==='prospeccion' && entry.tipo==='Zona';
       if(isZonaEntry) visit.phase = nextZonaPhase(entry);
-      entry.evidenceLog.push(visit);
-      if(persistentTarget){ persistentTarget.save(); } else { saveState(); }
-      renderSections(); renderOverall();
-      toast(isZonaEntry ? (visit.phase==='inicio' ? 'Inicio de promoción registrado ✓' : 'Fin de promoción registrado ✓') : 'Visita registrada ✓');
+      // En cobranza y fichas, la nota de qué pasó en la visita es obligatoria — sin ella
+      // no se guarda ni la foto ni las coordenadas. En prospección (Zona/cambaceo) se
+      // guarda directo, como antes, porque ahí ya se lleva inicio/fin por separado.
+      if(key!=='prospeccion'){
+        pendingVisitSave = { entry, visit, persistentTarget, isZonaEntry };
+        openEvidenceNoteModal();
+      } else {
+        entry.evidenceLog.push(visit);
+        if(persistentTarget){ persistentTarget.save(); } else { saveState(); }
+        renderSections(); renderOverall();
+        toast(isZonaEntry ? (visit.phase==='inicio' ? 'Inicio de promoción registrado ✓' : 'Fin de promoción registrado ✓') : 'Visita registrada ✓');
+      }
     }catch(e){
       console.error('Fallo al procesar evidencia:', e);
       const f = cameraInput.files && cameraInput.files[0];
@@ -1641,6 +1668,41 @@
       toast('No se pudo procesar la evidencia' + detail + fileInfo, 6000);
     }
     pendingEvidence = null;
+  });
+
+  // ---------- Nota obligatoria por visita (cobranza y fichas) ----------
+  let pendingVisitSave = null;
+  const evidenceNoteModal = $('#evidenceNoteModal');
+  const evidenceNoteInput = $('#evidenceNoteInput');
+  const evidenceNoteSave = $('#evidenceNoteSave');
+  function openEvidenceNoteModal(){
+    evidenceNoteInput.value = '';
+    evidenceNoteSave.disabled = true;
+    evidenceNoteModal.classList.remove('hidden');
+    setTimeout(()=>evidenceNoteInput.focus(), 50);
+  }
+  function closeEvidenceNoteModal(){
+    evidenceNoteModal.classList.add('hidden');
+    pendingVisitSave = null;
+  }
+  evidenceNoteInput.addEventListener('input', ()=>{
+    evidenceNoteSave.disabled = evidenceNoteInput.value.trim().length===0;
+  });
+  $('#evidenceNoteCancel').addEventListener('click', ()=>{
+    closeEvidenceNoteModal();
+    toast('Visita cancelada — no se guardó la foto');
+  });
+  evidenceNoteSave.addEventListener('click', ()=>{
+    if(!pendingVisitSave) return;
+    const nota = evidenceNoteInput.value.trim();
+    if(!nota) return;
+    const { entry, visit, persistentTarget, isZonaEntry } = pendingVisitSave;
+    visit.nota = nota;
+    entry.evidenceLog.push(visit);
+    if(persistentTarget){ persistentTarget.save(); } else { saveState(); }
+    closeEvidenceNoteModal();
+    renderSections(); renderOverall();
+    toast(isZonaEntry ? (visit.phase==='inicio' ? 'Inicio de promoción registrado ✓' : 'Fin de promoción registrado ✓') : 'Visita registrada ✓');
   });
   function getPosition(){
     return new Promise((res,rej)=>{
@@ -2121,6 +2183,7 @@
           ${isParcialFicha?`<span class="ev-tag" style="color:#1E5FA8">◐ pago parcial</span>`:''}
           ${e.statusTime?`<span class="rd">${formatStatusStamp(e)}</span>`:''}
           ${e.comment ? `<span class="rc">${escapeHTML(e.comment)}</span>` : ''}
+          ${evLog.filter(v=>v.nota).length ? `<div class="visit-notes">${evLog.filter(v=>v.nota).map(v=>`<div class="visit-note-line">${v.date?fmtDate(v.date):''}${v.time?' · '+v.time:''} — ${escapeHTML(v.nota)}</div>`).join('')}</div>` : ''}
           ${latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a> <span class="${locSource(latestEv)==='manual'?'loc-manual':'loc-auto'}">${locSourceBadge(latestEv)}</span></span>` : ''}
           ${latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)} <span class="loc-manual">✍️ manual (sin confirmar)</span></span>` : ''}
           ${zline ? `<span class="rc" style="color:${zonaLevelColor(zline.level)};font-weight:700">${zonaLevelIcon(zline.level)} ${escapeHTML(zline.text)}</span>${zline.mapUrl?` <a class="rc" href="${zline.mapUrl}" target="_blank" rel="noopener">🗺️ ruta</a>`:''}${zline.hasManual?` <span class="loc-manual">✍️ incluye manual</span>`:''}` : ''}
@@ -2447,6 +2510,11 @@
                 doc.text(`  ${dLabel} — sin coordenadas`, marginL+20, y);
               }
               y+=11;
+              if(v.nota){
+                doc.setFontSize(9); doc.setTextColor(28,43,57);
+                const notaLines = wrapText(`"${v.nota}"`, 9, pageW-marginL-marginR-30);
+                notaLines.forEach(nl=>{ checkBreak(11); doc.text(nl, marginL+22, y); y+=11; });
+              }
             });
             doc.setFontSize(10); doc.setTextColor(28,43,57);
           }
@@ -2576,6 +2644,8 @@
         const evLogWa = getEvidenceLog(e);
         const latestEvWa = evLogWa.length ? evLogWa[evLogWa.length-1] : null;
         if(evLogWa.length>1) out += `\n   (${evLogWa.length} registros: ${evLogWa.map(v=>`${fmtDate(v.date)}${v.phase?' '+v.phase:''}`).join(', ')})`;
+        const notasWa = evLogWa.filter(v=>v.nota);
+        if(notasWa.length) out += notasWa.map(v=>`\n   💬 ${fmtDate(v.date)}${v.time?' '+v.time:''}: ${v.nota}`).join('');
         if(latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng} ${locSource(latestEvWa)==='manual'?'(✍️ manual)':'(GPS automático)'}`;
         else if(latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords} (✍️ manual, sin confirmar)`;
         if(sec.key==='prospeccion'){
