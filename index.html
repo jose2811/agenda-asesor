@@ -470,7 +470,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.15.0';
+  const APP_VERSION = 'v3.15.1';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -2170,7 +2170,18 @@
         const movedTag = e.trasladado ? ' <span style="color:#5B6672">(trasladada)</span>' : '';
         const evLog = getEvidenceLog(e);
         const latestEv = evLog.length ? evLog[evLog.length-1] : null;
-        const zline = sec.key==='prospeccion' ? zonaValidationLine(e) : null;
+        const isZonaSec = sec.key==='prospeccion';
+        const zline = isZonaSec ? zonaValidationLine(e) : null;
+        // Cada visita con su propia ubicación y nota — no solo la última. Así el gerente
+        // ve, por ejemplo, dónde estaba el asesor cuando dijeron "regreso a las 4pm" Y
+        // dónde estaba cuando volvió y no localizó al cliente: dos lugares, dos horas.
+        const visitBreakdownHTML = (!isZonaSec && evLog.length>0) ? `<div class="visit-notes">${evLog.map(v=>{
+          const mapUrl = v.lat!=null ? `https://www.google.com/maps?q=${v.lat},${v.lng}` : null;
+          const locHTML = mapUrl
+            ? `📍 <a href="${mapUrl}" target="_blank" rel="noopener">Ver ubicación</a> <span class="${locSource(v)==='manual'?'loc-manual':'loc-auto'}">${locSourceBadge(v)}</span>`
+            : (v.pastedCoords ? `📍 ${escapeHTML(v.pastedCoords)} <span class="loc-manual">✍️ manual (sin confirmar)</span>` : `<span class="loc-manual">sin ubicación</span>`);
+          return `<div class="visit-note-line"><b>${v.date?fmtDate(v.date):''}${v.time?' · '+v.time:''}</b>${v.nota?' — '+escapeHTML(v.nota):''}<br>${locHTML}</div>`;
+        }).join('')}</div>` : '';
         return `<div class="report-line">
           ${latestEv && latestEv.photo ? `<img class="report-thumb" src="${latestEv.photo}" alt="evidencia" data-action="zoom">` : ''}
           <span class="rn">${escapeHTML(e.name)}${movedTag}</span>
@@ -2183,9 +2194,9 @@
           ${isParcialFicha?`<span class="ev-tag" style="color:#1E5FA8">◐ pago parcial</span>`:''}
           ${e.statusTime?`<span class="rd">${formatStatusStamp(e)}</span>`:''}
           ${e.comment ? `<span class="rc">${escapeHTML(e.comment)}</span>` : ''}
-          ${evLog.filter(v=>v.nota).length ? `<div class="visit-notes">${evLog.filter(v=>v.nota).map(v=>`<div class="visit-note-line">${v.date?fmtDate(v.date):''}${v.time?' · '+v.time:''} — ${escapeHTML(v.nota)}</div>`).join('')}</div>` : ''}
-          ${latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a> <span class="${locSource(latestEv)==='manual'?'loc-manual':'loc-auto'}">${locSourceBadge(latestEv)}</span></span>` : ''}
-          ${latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)} <span class="loc-manual">✍️ manual (sin confirmar)</span></span>` : ''}
+          ${visitBreakdownHTML}
+          ${isZonaSec && latestEv && latestEv.lat!=null ? `<span class="rc">📍 <a href="https://www.google.com/maps?q=${latestEv.lat},${latestEv.lng}" target="_blank" rel="noopener">Ver ubicación</a> <span class="${locSource(latestEv)==='manual'?'loc-manual':'loc-auto'}">${locSourceBadge(latestEv)}</span></span>` : ''}
+          ${isZonaSec && latestEv && !latestEv.lat && latestEv.pastedCoords ? `<span class="rc">📍 ${escapeHTML(latestEv.pastedCoords)} <span class="loc-manual">✍️ manual (sin confirmar)</span></span>` : ''}
           ${zline ? `<span class="rc" style="color:${zonaLevelColor(zline.level)};font-weight:700">${zonaLevelIcon(zline.level)} ${escapeHTML(zline.text)}</span>${zline.mapUrl?` <a class="rc" href="${zline.mapUrl}" target="_blank" rel="noopener">🗺️ ruta</a>`:''}${zline.hasManual?` <span class="loc-manual">✍️ incluye manual</span>`:''}` : ''}
         </div>`;
       }).join('') : `<div class="report-empty">Sin cuentas en este bloque.</div>`;
@@ -2643,11 +2654,17 @@
         if(e.comment) out += `\n   ${e.comment}`;
         const evLogWa = getEvidenceLog(e);
         const latestEvWa = evLogWa.length ? evLogWa[evLogWa.length-1] : null;
+        const isZonaWa = sec.key==='prospeccion';
         if(evLogWa.length>1) out += `\n   (${evLogWa.length} registros: ${evLogWa.map(v=>`${fmtDate(v.date)}${v.phase?' '+v.phase:''}`).join(', ')})`;
-        const notasWa = evLogWa.filter(v=>v.nota);
-        if(notasWa.length) out += notasWa.map(v=>`\n   💬 ${fmtDate(v.date)}${v.time?' '+v.time:''}: ${v.nota}`).join('');
-        if(latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng} ${locSource(latestEvWa)==='manual'?'(✍️ manual)':'(GPS automático)'}`;
-        else if(latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords} (✍️ manual, sin confirmar)`;
+        if(!isZonaWa && evLogWa.length>0){
+          // Cada visita con su propia nota Y su propia ubicación — no solo la última.
+          evLogWa.forEach(v=>{
+            out += `\n   💬 ${fmtDate(v.date)}${v.time?' '+v.time:''}${v.nota?': '+v.nota:''}`;
+            if(v.lat!=null) out += `\n      📍 https://www.google.com/maps?q=${v.lat},${v.lng} ${locSource(v)==='manual'?'(✍️ manual)':'(GPS automático)'}`;
+            else if(v.pastedCoords) out += `\n      📍 ${v.pastedCoords} (✍️ manual, sin confirmar)`;
+          });
+        } else if(isZonaWa && latestEvWa && latestEvWa.lat!=null) out += `\n   📍 https://www.google.com/maps?q=${latestEvWa.lat},${latestEvWa.lng} ${locSource(latestEvWa)==='manual'?'(✍️ manual)':'(GPS automático)'}`;
+        else if(isZonaWa && latestEvWa && latestEvWa.pastedCoords) out += `\n   📍 ${latestEvWa.pastedCoords} (✍️ manual, sin confirmar)`;
         if(sec.key==='prospeccion'){
           const zlineWa = zonaValidationLine(e);
           if(zlineWa) out += `\n   ${zonaLevelIcon(zlineWa.level)} ${zlineWa.text}${zlineWa.hasManual?' (✍️ incluye manual)':''}${zlineWa.mapUrl?`\n   🗺️ ${zlineWa.mapUrl}`:''}`;
