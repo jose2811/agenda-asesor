@@ -470,7 +470,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.16.1';
+  const APP_VERSION = 'v3.16.2';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -1197,8 +1197,10 @@
     function addVisits(list, sectionLabel){
       list.forEach(e=>{
         getEvidenceLog(e).forEach(v=>{
-          if(!v.nota) return; // solo eventos con nota — son los que tienen hora confiable y contexto real
-          events.push({ date: v.date, time: v.time, mins: timeToMinutes(v.time), sectionLabel, name: e.name, nota: v.nota, kind:'visita' });
+          // Visitas de antes de que la nota fuera obligatoria (versión anterior de la app)
+          // se muestran igual, pero marcadas — para no confundir "no dijo nada" con
+          // "la agenda todavía no le pedía nada".
+          events.push({ date: v.date, time: v.time, mins: timeToMinutes(v.time), sectionLabel, name: e.name, nota: v.nota || null, legacyNoNote: !v.nota, kind:'visita' });
         });
       });
     }
@@ -2694,6 +2696,11 @@
         y += 20 + 8;
         doc.setFont(undefined,'italic'); doc.setFontSize(8); doc.setTextColor(90,100,110);
         checkBreak(10); doc.text('Armada con las visitas y el inicio/fin de zona ya capturados — no pide nada adicional.', marginL+10, y); y+=14;
+        if(timeline.some(ev=>ev.legacyNoNote)){
+          wrapText('"Sin nota registrada, versión anterior" = visita de antes de que la nota fuera obligatoria; no es que el asesor no dijera nada.', 8, pageW-marginL-marginR-20)
+            .forEach(l=>{ checkBreak(10); doc.text(l, marginL+10, y); y+=11; });
+          y+=3;
+        }
         doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
         let lastDate = null;
         timeline.forEach(ev=>{
@@ -2711,10 +2718,14 @@
             doc.text(`    [!] hueco de ${fmtDurationMin(ev.gapBefore)} sin registrar nada`, marginL+10, y); y+=11;
           }
           checkBreak(11);
-          doc.setFontSize(9); doc.setTextColor(28,43,57);
+          doc.setFontSize(9);
+          if(ev.legacyNoNote){ doc.setFont(undefined,'italic'); doc.setTextColor(120,120,120); }
+          else { doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57); }
           const label = ev.kind==='visita' ? `${ev.sectionLabel} — ${ev.name}` : `Zona — ${ev.name}`;
-          const lines = wrapText(`${ev.time||'?'}  ${label}: ${ev.nota}`, 9, pageW-marginL-marginR-20);
+          const notaTxt = ev.legacyNoNote ? 'sin nota registrada, versión anterior' : ev.nota;
+          const lines = wrapText(`${ev.time||'?'}  ${label}: ${notaTxt}`, 9, pageW-marginL-marginR-20);
           lines.forEach(l=>{ checkBreak(11); doc.text(l, marginL+10, y); y+=11; });
+          doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
           if(ev.overlapZona){
             checkBreak(11);
             doc.setFont(undefined,'bold'); doc.setFontSize(8.5); doc.setTextColor(179,38,30);
