@@ -470,7 +470,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.15.1';
+  const APP_VERSION = 'v3.16.0';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -1173,6 +1173,88 @@
     // Más recientes primero.
     rows.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
     return rows;
+  }
+  // ---------- Línea de tiempo de la semana ----------
+  // Junta, en orden cronológico, todo lo que ya se captura con hora exacta: cada visita
+  // (foto + GPS + nota) de cobranza/fichas, y cada inicio/fin de zona. No pide nada nuevo —
+  // solo ordena lo que ya existe, para poder ver de un vistazo qué hizo el asesor en el día,
+  // si hay huecos largos sin gestión, o cruces raros (ej. una cobranza registrada en medio
+  // de una promoción de zona que seguía abierta).
+  const TIMELINE_GAP_MIN = 120; // huecos de 2+ horas se marcan
+  function fmtDurationMin(mins){
+    const h = Math.floor(mins/60), m = mins%60;
+    if(h && m) return `${h}h ${m}min`;
+    if(h) return `${h}h`;
+    return `${m}min`;
+  }
+  function computeWeekTimeline(){
+    const events = [];
+    function addVisits(list, sectionLabel){
+      list.forEach(e=>{
+        getEvidenceLog(e).forEach(v=>{
+          if(!v.nota) return; // solo eventos con nota — son los que tienen hora confiable y contexto real
+          events.push({ date: v.date, time: v.time, mins: timeToMinutes(v.time), sectionLabel, name: e.name, nota: v.nota, kind:'visita' });
+        });
+      });
+    }
+    addVisits(weekFichas, 'Fichas de la semana');
+    addVisits(weekMora17, 'Mora de la semana pasada');
+    // Seguimiento 8-60 capturado DIRECTO en esa cintilla (las cuentas "prestadas" de Mora17
+    // ya se cuentan arriba, porque comparten el mismo objeto real) — vive día por día en el
+    // estado guardado de cada fecha, así que hay que recorrer cada día guardado.
+    listStoredDates().forEach(d=>{
+      const raw = lsGet(storageKey(d));
+      if(!raw) return;
+      try{
+        const parsed = JSON.parse(raw);
+        addVisits((parsed.sections && parsed.sections.mora860) || [], 'Seguimiento 8-60');
+      }catch(err){ /* día corrupto o vacío, se ignora */ }
+    });
+    if(!hasStoredDate(fechaInput.value)){
+      // Hoy, si todavía no se ha guardado en este dispositivo (cambios muy recientes).
+      addVisits(state.sections.mora860 || [], 'Seguimiento 8-60');
+    }
+    // Zona: cada inicio/fin de promoción, como su propio evento.
+    weekZonas.forEach(e=>{
+      if(e.tipo!=='Zona') return;
+      getEvidenceLog(e).filter(v=>v.phase).forEach(v=>{
+        events.push({ date: v.date, time: v.time, mins: timeToMinutes(v.time), sectionLabel:'Prospección y cambaceo', name: e.name, nota: v.phase==='inicio'?'Inicio de promoción':'Fin de promoción', kind: v.phase });
+      });
+    });
+    events.sort((a,b)=>{
+      if(a.date!==b.date) return (a.date||'') < (b.date||'') ? -1 : 1;
+      return (a.mins??0) - (b.mins??0);
+    });
+    // Ventanas de zona completas (inicio→fin, mismo día) — para marcar cobranza registrada
+    // mientras una promoción seguía en curso.
+    const zonaWindows = [];
+    weekZonas.forEach(e=>{
+      if(e.tipo!=='Zona') return;
+      zonaSessions(e).filter(s=>s.inicio && s.fin && s.inicio.date===s.fin.date).forEach(s=>{
+        const startMin = timeToMinutes(s.inicio.time), endMin = timeToMinutes(s.fin.time);
+        if(startMin!=null && endMin!=null) zonaWindows.push({date: s.inicio.date, startMin, endMin, name: e.name});
+      });
+    });
+    events.forEach(ev=>{
+      if(ev.kind!=='visita' || ev.mins==null) return;
+      const hit = zonaWindows.find(w => w.date===ev.date && ev.mins>=w.startMin && ev.mins<=w.endMin);
+      if(hit) ev.overlapZona = hit.name;
+    });
+    // Huecos de 2+ horas SIN registrar nada, dentro de cada día (nunca antes del primer
+    // evento ni después del último — eso es el inicio/fin normal de la jornada).
+    const byDay = {};
+    events.forEach(ev=>{ (byDay[ev.date] = byDay[ev.date] || []).push(ev); });
+    Object.keys(byDay).forEach(d=>{
+      const dayEvents = byDay[d];
+      for(let i=1;i<dayEvents.length;i++){
+        const prev = dayEvents[i-1], cur = dayEvents[i];
+        if(prev.mins!=null && cur.mins!=null){
+          const gap = cur.mins - prev.mins;
+          if(gap >= TIMELINE_GAP_MIN) cur.gapBefore = gap;
+        }
+      }
+    });
+    return events;
   }
   // Cuándo aplica pedir evidencia (foto + coordenadas):
   // - Mora de la semana pasada: mientras no esté pagada (incluye Pago parcial).
@@ -2592,6 +2674,52 @@
       }
       y+=8;
     });
+
+    // ---------- Línea de tiempo de la semana ----------
+    // Todo lo ya capturado (visitas con nota + inicio/fin de zona), en orden cronológico,
+    // agrupado por día — para revisar de un vistazo qué hizo el asesor y detectar huecos
+    // largos o cruces de horario. No aplica en vista histórica (esa es de un solo día).
+    if(!isHistoricalView()){
+      const timeline = computeWeekTimeline();
+      if(timeline.length){
+        checkBreak(28);
+        pill(marginL, y, pageW-marginL-marginR, 20, [28,43,57], 5);
+        doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(9.5);
+        doc.text('LÍNEA DE TIEMPO DE LA SEMANA', marginL+10, y+14);
+        y += 20 + 8;
+        doc.setFont(undefined,'italic'); doc.setFontSize(8); doc.setTextColor(90,100,110);
+        checkBreak(10); doc.text('Armada con las visitas y el inicio/fin de zona ya capturados — no pide nada adicional.', marginL+10, y); y+=14;
+        doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57);
+        let lastDate = null;
+        timeline.forEach(ev=>{
+          if(ev.date!==lastDate){
+            lastDate = ev.date;
+            checkBreak(18);
+            y += 4;
+            doc.setFont(undefined,'bold'); doc.setFontSize(9.5); doc.setTextColor(28,43,57);
+            doc.text(fmtDate(ev.date), marginL+10, y); y += 12;
+            doc.setFont(undefined,'normal');
+          }
+          if(ev.gapBefore){
+            checkBreak(11);
+            doc.setFontSize(8.5); doc.setTextColor(138,90,0);
+            doc.text(`    [!] hueco de ${fmtDurationMin(ev.gapBefore)} sin registrar nada`, marginL+10, y); y+=11;
+          }
+          checkBreak(11);
+          doc.setFontSize(9); doc.setTextColor(28,43,57);
+          const label = ev.kind==='visita' ? `${ev.sectionLabel} — ${ev.name}` : `Zona — ${ev.name}`;
+          const lines = wrapText(`${ev.time||'?'}  ${label}: ${ev.nota}`, 9, pageW-marginL-marginR-20);
+          lines.forEach(l=>{ checkBreak(11); doc.text(l, marginL+10, y); y+=11; });
+          if(ev.overlapZona){
+            checkBreak(11);
+            doc.setFont(undefined,'bold'); doc.setFontSize(8.5); doc.setTextColor(179,38,30);
+            doc.text(`    [!!] registrada durante promoción de zona "${ev.overlapZona}" (en curso)`, marginL+10, y); y+=11;
+            doc.setFont(undefined,'normal'); doc.setTextColor(28,43,57); doc.setFontSize(9);
+          }
+        });
+        y += 8;
+      }
+    }
 
     // ---------- Resumen final (cajas) ----------
     checkBreak(90);
