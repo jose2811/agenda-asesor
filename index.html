@@ -10,7 +10,9 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
 <meta name="theme-color" content="#01B3B1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Fuentes NO bloqueantes: si la red del teléfono está "conectada" pero no responde, la app abre igual con fuente del sistema -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap"></noscript>
 
 <style>
   :root{
@@ -432,7 +434,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · <span id="footerVersion">v3.14.0</span> —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · <span id="footerVersion">v3.14.1</span> —</div>
 
 </div>
 <div class="toast" id="toast"></div>

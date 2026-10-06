@@ -12,7 +12,7 @@
 //
 // IMPORTANTE: subir CACHE_VERSION cada vez que se publique un cambio grande,
 // para que los cachés viejos se limpien solos en el siguiente open.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `agenda-asesor-${CACHE_VERSION}`;
 const CORE_ASSETS = [
   './',
@@ -37,6 +37,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Red "colgada" (hay señal pero no responde): sin límite, el navegador se queda
+// esperando y la app sale en negro. A los 4 s damos por perdida la red y usamos
+// la última copia guardada (si la hay).
+function fetchConTimeout(req, ms = 4000){
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject('timeout'), ms);
+    fetch(req).then((r) => { clearTimeout(t); resolve(r); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   // Solo manejamos GET dentro del mismo origen — todo lo demás (POST al buzón, etc.)
@@ -44,7 +54,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(req)
+    fetchConTimeout(req)
       .then((networkResp) => {
         // Red disponible: usamos esa respuesta y actualizamos la copia guardada.
         const copy = networkResp.clone();
