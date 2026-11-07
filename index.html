@@ -343,7 +343,7 @@
 
       <h4>Prospección y cambaceo (04)</h4>
       <p>Solo <b>Zona</b>: nombre de la zona + hora. <b>Ahora vive toda la semana</b>, igual que Fichas/Mora17/Desembolsos — no se borra al cambiar de día, solo con "Borrar días anteriores" al iniciar la siguiente semana.<br>
-      <b>Evidencia en dos pasos:</b> mientras no la marques "Realizado", el botón pide primero <b>🚶 Iniciar promoción</b> (foto + coordenadas + hora) y, al terminar el recorrido, <b>🏁 Finalizar promoción</b> (otra foto + coordenadas + hora). Con los dos puntos, la agenda calcula cuánto tiempo real estuviste en promoción y qué tan lejos te moviste entre el inicio y el fin.<br>
+      <b>Evidencia en dos pasos:</b> el estatus ya no se elige a mano: queda <b>Pendiente</b> al capturar, <b>En promoción</b> al iniciar y <b>Realizada</b> sólo cuando finalizas. Una promoción con evidencia ya no se puede borrar. El botón pide primero <b>🚶 Iniciar promoción</b> (foto + coordenadas + hora) y, al terminar el recorrido, <b>🏁 Finalizar promoción</b> (otra foto + coordenadas + hora). Con los dos puntos, la agenda calcula cuánto tiempo real estuviste en promoción y qué tan lejos te moviste entre el inicio y el fin.<br>
       <b>Es un sistema de confianza</b> (se puede engañar si alguien quiere) — la agenda no redacta un veredicto, solo resalta minutos y metros entre inicio y fin, con un color según qué tan poco se movió: <b>🟢 500m o más</b>, <b>🟠 entre 300 y 500m</b> (revisar con contexto — puede ser una zona compacta), <b>🔴 menos de 300m</b>, o si el cierre llega en menos de 3 minutos después del inicio. La distancia es en línea recta (no la ruta real caminada, así que puede no reflejar bien zonas con calles muy curveadas), y cada registro trae un enlace <b>🗺️ Ver ruta en el mapa</b> para verlo con tus propios ojos antes de decidir. El criterio final siempre es tuyo o del gerente.<br>
       También hay un <b>Resumen de cambaceo de la semana</b> (en pantalla, PDF y WhatsApp) con todas las promociones completas juntas, para revisar de un vistazo sin abrir cuenta por cuenta.<br>
       Aquí es donde se originan los prospectos que después capturas con nombre en el bloque 03.</p>
@@ -434,7 +434,7 @@
     <button class="btn btn-secondary back-edit" id="btnBack">Volver a editar</button>
   </div>
 
-  <div class="footer editor">— created by <b>Joe Fdz !!</b> · <span id="footerVersion">v3.16.3</span> —</div>
+  <div class="footer editor">— created by <b>Joe Fdz !!</b> · <span id="footerVersion">v3.17.0</span> —</div>
 
 </div>
 <div class="toast" id="toast"></div>
@@ -472,7 +472,7 @@
 (function(){
   // Versión de la app — única fuente: se usa en el pie de página y en el PDF,
   // para que José pueda detectar desde el PDF si alguien tiene una agenda vieja.
-  const APP_VERSION = 'v3.16.3';
+  const APP_VERSION = 'v3.17.0';
   const SECTIONS = [
     {id:'s1', idx:'01', key:'fichas', type:'fichas', captureStatus:true, title:'Fichas de la semana', hint:'Anota todas las fichas que vencen esta semana, con su fecha de pago — no hace falta esperar a que llegue el día.', namePh:'Nombre del cliente'},
     {id:'s2', idx:'02', key:'mora17', type:'mora', title:'Mora de la semana pasada', hint:'Cuentas de 1-7 días que no se cerraron la semana pasada — captúralas el sábado o el lunes. Los días avanzan solos, sin importar qué día abras la agenda. Si llega a 8 días, se sigue mostrando aquí Y ADEMÁS aparece en Seguimiento 8-60 — es la misma cuenta, no desaparece de esta lista por haber avanzado.', namePh:'Nombre del cliente', detailPh:'Días de atraso (al capturar)', detailType:'number'},
@@ -1052,6 +1052,22 @@
     if(!last || !last.phase) return 'inicio'; // primer registro, o dato viejo sin fase
     return last.phase==='inicio' ? 'fin' : 'inicio';
   }
+  // Estado de una Zona derivado de su evidencia (ya no se elige a mano):
+  // 'nueva' (sin iniciar), 'abierta' (iniciada, falta finalizar) o 'cerrada' (finalizada).
+  function zonaEstado(e){
+    const log = getEvidenceLog(e).filter(v=>v.phase==='inicio' || v.phase==='fin');
+    if(!log.length) return e.status==='realizado' ? 'cerrada' : 'nueva';
+    return log[log.length-1].phase==='fin' ? 'cerrada' : 'abierta';
+  }
+  function syncZonaStatus(){
+    let ch = false;
+    weekZonas.forEach(e=>{
+      const z = zonaEstado(e);
+      if(z==='cerrada' && e.status!=='realizado'){ e.status='realizado'; ch=true; }
+      else if(z==='abierta' && e.status!=='pendiente'){ e.status='pendiente'; ch=true; }
+    });
+    if(ch) saveWeekZonas();
+  }
   // Empareja los registros en el orden en que se capturaron: inicio, fin, inicio, fin...
   function zonaSessions(e){
     const log = getEvidenceLog(e).filter(v=>v.phase==='inicio' || v.phase==='fin');
@@ -1277,7 +1293,7 @@
     if(sec.key==='mora17') return e.status!=='pagado';
     if(sec.key==='mora860') return e.status!=='pagado';
     if(sec.key==='fichas') return e.status==='complicada' || e.status==='parcial';
-    if(sec.key==='prospeccion') return e.tipo==='Zona' && e.status!=='realizado';
+    if(sec.key==='prospeccion') return e.tipo==='Zona' && !(e.status==='realizado' && getEvidenceLog(e).length===0);
     return false;
   }
   // Nomenclatura compacta para reportes: CF/SF = Con/Sin Foto, CC/SC = Con/Sin Coordenadas.
@@ -1320,7 +1336,12 @@
     } else {
       btnLabel = `📸 ${log.length?'Registrar otra visita':'Registrar visita presencial'}`;
     }
-    html += `<button class="btn-evidence" data-action="evidence" data-key="${key}" data-i="${i}">${btnLabel}</button>`;
+    if(isZona && zonaEstado(e)==='cerrada'){
+      html += `<span class="evidence-ok">✅ Promoción finalizada</span>`;
+    } else {
+      if(isZona && zonaEstado(e)==='abierta') html += `<span class="evidence-warn">⏳ Promoción en curso — al terminar, toca Finalizar</span>`;
+      html += `<button class="btn-evidence" data-action="evidence" data-key="${key}" data-i="${i}">${btnLabel}</button>`;
+    }
     if(log.length>0){
       const fotosCount = log.filter(v=>v.photo).length;
       const coordsCount = log.filter(v=>v.lat!=null).length;
@@ -1366,7 +1387,13 @@
     const needsEvidence = evidenceApplies(sec, e) && getEvidenceLog(e).length===0 && !e.trasladado;
     const needsFollowupProof = sec.key==='desembolso' && e.tipo==='Lead Digital' && e.status==='pendiente' && !(e.comment && e.comment.trim().length>0);
     const staleTag = isStale(sec, e) ? staleDays(e) : 0;
-    const canDelete = source==='mora17week' ? false : !(source==='week' && e.originDate && e.originDate!==fechaInput.value);
+    const isZonaE = sec.key==='prospeccion' && e.tipo==='Zona';
+    const zonaConEvidencia = isZonaE && getEvidenceLog(e).length>0;
+    const canDelete = source==='mora17week' ? false : (!(source==='week' && e.originDate && e.originDate!==fechaInput.value) && !zonaConEvidencia);
+    const zEst = isZonaE ? zonaEstado(e) : null;
+    const statusCtl = isZonaE
+      ? `<span class="status-select ${zEst==='cerrada'?'st-p-desembolsado':'st-p-pendiente'}" style="display:inline-block;pointer-events:none">${zEst==='cerrada'?'✅ Realizada':(zEst==='abierta'?'🟢 En promoción':'⚪ Pendiente')}</span>`
+      : `<select class="status-select ${st.cls}" data-action="status" ${e.trasladado?'disabled':''}>${statusOptionsHTML(sec, e)}</select>`;
     const isMora17Persistent = sec.key==='mora17' || source==='mora17week';
     let detailDisplay = e.detail||'';
     let detailWarnClass = '';
@@ -1401,8 +1428,8 @@
         ${detailDisplay?`<span class="ficha-tag-sm${detailWarnClass}">${escapeHTML(detailDisplay)}</span>`:''}
         ${(e.tipo && e.tipo!=='Zona')?`<span class="ficha-tag-sm">${escapeHTML(e.tipo)}</span>`:''}
         ${crossRefTag}
-        <select class="status-select ${st.cls}" data-action="status" ${e.trasladado?'disabled':''}>${statusOptionsHTML(sec, e)}</select>
-        ${canDelete ? `<button class="ficha-del" title="Eliminar" data-action="del">✕</button>` : `<span class="locked-tag" title="Ya no se puede borrar — solo cambiar estatus">🔒</span>`}
+        ${statusCtl}
+        ${canDelete ? `<button class="ficha-del" title="Eliminar" data-action="del">✕</button>` : `<span class="locked-tag" title="${zonaConEvidencia?'Ya tiene evidencia — no se puede borrar':'Ya no se puede borrar — solo cambiar estatus'}">🔒</span>`}
       </div>
       ${isPagadaFicha ? '' : `<input type="text" class="ficha-comment" placeholder="Comentario..." value="${escapeHTML(e.comment||'')}" data-action="comment" ${e.trasladado?'disabled':''}>`}
       ${isFichas ? `<div class="ficha-cuota-row"><span class="cuota-label">Cuota:</span><input type="number" class="ficha-cuota" placeholder="0" min="0" step="1" value="${e.cuota!=null?e.cuota:''}" data-action="cuota"></div>` : ''}
@@ -1419,6 +1446,7 @@
   }
 
   function renderSections(){
+    syncZonaStatus();
     reconcileFichaStatuses(); // blindaje: se revisa en cada dibujado, no solo al abrir la fecha
     const wrap = $('#sectionsWrap');
     wrap.innerHTML = SECTIONS.map(sec => {
@@ -1644,6 +1672,8 @@
       const persist = persistentTarget ? persistentTarget.save : saveState;
       const delBtn = card.querySelector('[data-action="del"]');
       if(delBtn) delBtn.addEventListener('click', ()=>{
+        const nmDel = arr[i] ? arr[i].name : '';
+        if(!confirm(`¿Quitar "${nmDel}"? Se pierde con todo lo que tenga capturado y no se puede deshacer.`)) return;
         arr.splice(i,1); persist(); renderSections(); renderOverall(); renderBanners(); refreshWeekly();
       });
       const sel = card.querySelector('[data-action="status"]');
@@ -1747,6 +1777,7 @@
         openEvidenceNoteModal();
       } else {
         entry.evidenceLog.push(visit);
+        if(isZonaEntry){ entry.status = visit.phase==='fin' ? 'realizado' : 'pendiente'; entry.statusTime = nowTime(); entry.statusDate = fechaInput.value; }
         if(persistentTarget){ persistentTarget.save(); } else { saveState(); }
         renderSections(); renderOverall();
         toast(isZonaEntry ? (visit.phase==='inicio' ? 'Inicio de promoción registrado ✓' : 'Fin de promoción registrado ✓') : 'Visita registrada ✓');
@@ -2123,6 +2154,14 @@
         </div>`;
       }
     }
+    {
+      const T = todayStr(), mon = mondayOf(T);
+      const stale = [weekFichas, weekMora17, weekProspectos, weekZonas].reduce((n,l)=>n+l.filter(e=>e.originDate && e.originDate<mon).length, 0);
+      if(stale>0){
+        html += `<div class="banner banner-forecast"><div><b>🧹 ${isMonday(T)?'Hoy es lunes — ':''}tienes ${stale} registro(s) de la semana pasada</b>
+          Usa <b>"Borrar días anteriores"</b> (abajo) para empezar la semana con cuentas limpias.</div></div>`;
+      }
+    }
     wrap.innerHTML = html;
   }
 
@@ -2142,6 +2181,25 @@
     // desembolsar) — estas últimas se limpian siempre que se confirme, sin importar
     // si hay o no días viejos guardados (antes solo se limpiaban cuando sí los había,
     // dejando "clientes fantasma" visibles si el asesor apenas empezaba a usar la app).
+    // Candado de la limpieza: es una acción de LUNES (semana nueva). Entre semana, si ya
+    // hay captura de la semana en curso, se pide triple confirmación para no perder el
+    // avance semanal por accidente (o por costumbre de borrar diario).
+    {
+      const T = todayStr(), mon = mondayOf(T);
+      const cur = e => !e.originDate || e.originDate >= mon;
+      const nLista = [weekFichas, weekMora17, weekProspectos, weekZonas].reduce((n,l)=>n+l.filter(cur).length, 0);
+      const diaConDatos = listStoredDates().filter(d=>d>=mon).some(d=>{
+        try{ const st = JSON.parse(lsGet(storageKey(d))||'{}'); return Object.values(st.sections||{}).some(a=>Array.isArray(a)&&a.length>0); }catch(e){ return false; }
+      });
+      const hayActual = nLista>0 || diaConDatos || weekApprovals.count>0;
+      if(!isMonday(T) && hayActual){
+        if(!confirm(`⚠ Este botón es para el LUNES, al empezar la semana nueva.\n\nHoy NO es lunes y todavía tienes captura de ESTA semana (${nLista} registro(s)${weekApprovals.count>0?` y ${weekApprovals.count} approval(s)`:''}). Si la borras, pierdes tu avance semanal y tu gerente ya no podrá verlo.\n\n¿Quieres continuar?`)) return;
+        if(!confirm(`Segunda confirmación.\n\nSe borrarán Fichas, Mora de la semana pasada, Clientes a desembolsar, Prospección y cambaceo y el conteo de Approvals. NO se puede deshacer.\n\n¿Seguro?`)) return;
+        const w = prompt('Tercera confirmación.\n\nEscribe BORRAR (en mayúsculas) para confirmar:');
+        if(!w || w.trim()!=='BORRAR'){ toast('Cancelado — no se borró nada'); return; }
+        try{ const lg = JSON.parse(lsGet('agenda:resetLog')||'[]'); lg.push({ts:new Date().toISOString(), entreSemana:true, registros:nLista}); lsSet('agenda:resetLog', JSON.stringify(lg.slice(-20))); }catch(e){}
+      }
+    }
     const cutoff = fechaInput.value;
     const toDelete = listStoredDates().filter(d => d < cutoff);
     const includesToday = hasStoredDate(cutoff);
