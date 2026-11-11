@@ -12,7 +12,7 @@
 //
 // IMPORTANTE: subir CACHE_VERSION cada vez que se publique un cambio grande,
 // para que los cachés viejos se limpien solos en el siguiente open.
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const CACHE_NAME = `agenda-asesor-${CACHE_VERSION}`;
 const CORE_ASSETS = [
   './',
@@ -24,7 +24,7 @@ const CORE_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).catch(() => {})
+    caches.open(CACHE_NAME).then((cache) => Promise.all(CORE_ASSETS.map((u) => fetch(u, {cache:'reload'}).then((r) => r.ok ? cache.put(u, r) : null)))).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -40,10 +40,10 @@ self.addEventListener('activate', (event) => {
 // Red "colgada" (hay señal pero no responde): sin límite, el navegador se queda
 // esperando y la app sale en negro. A los 4 s damos por perdida la red y usamos
 // la última copia guardada (si la hay).
-function fetchConTimeout(req, ms = 4000){
+function fetchConTimeout(req, ms = 8000){
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject('timeout'), ms);
-    fetch(req).then((r) => { clearTimeout(t); resolve(r); }, (e) => { clearTimeout(t); reject(e); });
+    fetch(req.url, {cache:'no-store', credentials:'same-origin', redirect: req.redirect}).then((r) => { clearTimeout(t); resolve(r); }, (e) => { clearTimeout(t); reject(e); });
   });
 }
 
@@ -52,6 +52,7 @@ self.addEventListener('fetch', (event) => {
   // Solo manejamos GET dentro del mismo origen — todo lo demás (POST al buzón, etc.)
   // pasa de largo tal cual, directo a la red, sin tocarlo.
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  if (new URL(req.url).searchParams.has('chk')) return;   // revisión de versión: directo a la red, sin tocar el caché
 
   event.respondWith(
     fetchConTimeout(req)
